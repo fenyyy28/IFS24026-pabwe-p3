@@ -12,9 +12,9 @@
   >
 
   <style>
-    /* =====================================================
+    /* =========================================================
        RESET & GLOBAL
-    ===================================================== */
+    ========================================================= */
 
     * {
       box-sizing: border-box;
@@ -33,9 +33,12 @@
       --danger: #dc2626;
       --danger-light: #fee2e2;
 
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+
       --text: #0f172a;
-      --text-secondary: #334155;
-      --text-muted: #334155;
+      --text-secondary: #475569;
+      --text-muted: #475569;
 
       --background: #f8fafc;
       --surface: #ffffff;
@@ -83,9 +86,9 @@
       display: none !important;
     }
 
-    /* =====================================================
+    /* =========================================================
        LAYOUT
-    ===================================================== */
+    ========================================================= */
 
     .container {
       width: min(1100px, calc(100% - 32px));
@@ -135,9 +138,9 @@
       padding: 28px 0 50px;
     }
 
-    /* =====================================================
+    /* =========================================================
        TABS
-    ===================================================== */
+    ========================================================= */
 
     .tabs {
       display: flex;
@@ -160,7 +163,9 @@
       background: transparent;
       color: var(--text-secondary);
       font-weight: 700;
-      transition: 0.2s ease;
+      transition:
+        background 0.2s ease,
+        color 0.2s ease;
     }
 
     .tab-btn:hover {
@@ -183,9 +188,9 @@
       outline-offset: 2px;
     }
 
-    /* =====================================================
+    /* =========================================================
        PANEL
-    ===================================================== */
+    ========================================================= */
 
     .panel {
       background: var(--surface);
@@ -208,9 +213,9 @@
       color: var(--text-secondary);
     }
 
-    /* =====================================================
+    /* =========================================================
        SUMMARY
-    ===================================================== */
+    ========================================================= */
 
     .summary-grid {
       display: grid;
@@ -249,9 +254,9 @@
       color: var(--primary-dark);
     }
 
-    /* =====================================================
-       TOOLBAR & FORM
-    ===================================================== */
+    /* =========================================================
+       TOOLBAR
+    ========================================================= */
 
     .toolbar {
       display: grid;
@@ -290,7 +295,7 @@
 
     .input::placeholder,
     .textarea::placeholder {
-      color: #475569;
+      color: #64748b;
     }
 
     .input:focus,
@@ -300,9 +305,9 @@
       outline: 2px solid #bfdbfe;
     }
 
-    /* =====================================================
+    /* =========================================================
        BUTTONS
-    ===================================================== */
+    ========================================================= */
 
     .btn {
       display: inline-flex;
@@ -315,7 +320,9 @@
       border-radius: 9px;
       font-weight: 700;
       text-decoration: none;
-      transition: 0.2s ease;
+      transition:
+        background 0.2s ease,
+        transform 0.15s ease;
     }
 
     .btn:hover {
@@ -355,9 +362,9 @@
       font-size: 0.85rem;
     }
 
-    /* =====================================================
-       LIST & CARD
-    ===================================================== */
+    /* =========================================================
+       LIST & CARDS
+    ========================================================= */
 
     .item-list {
       display: grid;
@@ -443,9 +450,9 @@
       background: #f8fafc;
     }
 
-    /* =====================================================
+    /* =========================================================
        QUIZ
-    ===================================================== */
+    ========================================================= */
 
     .quiz-score {
       margin-bottom: 20px;
@@ -486,7 +493,9 @@
       padding: 13px 14px;
       background: white;
       color: var(--text);
-      transition: 0.2s ease;
+      transition:
+        border-color 0.2s ease,
+        background 0.2s ease;
     }
 
     .quiz-option:hover:not(:disabled) {
@@ -539,9 +548,9 @@
       margin: 10px 0;
     }
 
-    /* =====================================================
+    /* =========================================================
        MODAL
-    ===================================================== */
+    ========================================================= */
 
     .modal {
       position: fixed;
@@ -608,9 +617,9 @@
       margin-top: 5px;
     }
 
-    /* =====================================================
+    /* =========================================================
        FOOTER
-    ===================================================== */
+    ========================================================= */
 
     footer {
       padding: 25px 0 35px;
@@ -619,9 +628,9 @@
       font-size: 0.9rem;
     }
 
-    /* =====================================================
+    /* =========================================================
        RESPONSIVE
-    ===================================================== */
+    ========================================================= */
 
     @media (max-width: 800px) {
       .toolbar {
@@ -687,13 +696,12 @@
 
 <body>
 
-  <!-- =====================================================
+  <!-- =======================================================
        HEADER
-  ====================================================== -->
+  ======================================================== -->
 
   <header class="page-header">
     <div class="container">
-
       <div class="brand">
         <div class="brand-icon" aria-hidden="true">F</div>
 
@@ -706,27 +714,26 @@
         Dashboard sederhana untuk mengelola pengeluaran,
         bookmark, dan kuis interaktif dalam satu aplikasi.
       </p>
-
     </div>
   </header>
 
-
-  <!-- =====================================================
+  <!-- =======================================================
        MAIN
-  ====================================================== -->
+  ======================================================== -->
 
   <main>
     <div class="container">
 
       <!-- TAB NAVIGATION -->
 
-      <nav class="tabs" aria-label="Navigasi fitur">
-
+      <nav class="tabs" role="tablist" aria-label="Navigasi fitur">
         <button
           type="button"
           class="tab-btn"
           data-tab="expense"
+          role="tab"
           aria-selected="false"
+          aria-controls="panel-expense"
         >
           Expense Tracker
         </button>
@@ -735,7 +742,9 @@
           type="button"
           class="tab-btn"
           data-tab="bookmark"
+          role="tab"
           aria-selected="false"
+          aria-controls="panel-bookmark"
         >
           Bookmark Manager
         </button>
@@ -744,43 +753,38 @@
           type="button"
           class="tab-btn"
           data-tab="quiz"
+          role="tab"
           aria-selected="false"
+          aria-controls="panel-quiz"
         >
           Quiz App
         </button>
-
       </nav>
 
-
-      <!-- =================================================
-           EXPENSE TRACKER
-      ================================================== -->
+      <!-- ===================================================
+           EXPENSE PANEL
+      ==================================================== -->
 
       <section
         id="panel-expense"
         class="panel"
+        role="tabpanel"
         aria-labelledby="expense-title"
       >
 
         <div class="panel-header">
-
-          <h2 id="expense-title">
-            Expense Tracker
-          </h2>
+          <h2 id="expense-title">Expense Tracker</h2>
 
           <p>
             Catat pemasukan dan pengeluaran dengan mudah.
           </p>
-
         </div>
-
 
         <!-- SUMMARY -->
 
         <div class="summary-grid">
 
           <article class="summary-card">
-
             <div class="summary-label">
               Total Pemasukan
             </div>
@@ -791,12 +795,9 @@
             >
               Rp0
             </div>
-
           </article>
 
-
           <article class="summary-card">
-
             <div class="summary-label">
               Total Pengeluaran
             </div>
@@ -807,12 +808,9 @@
             >
               Rp0
             </div>
-
           </article>
 
-
           <article class="summary-card">
-
             <div class="summary-label">
               Saldo
             </div>
@@ -823,18 +821,15 @@
             >
               Rp0
             </div>
-
           </article>
 
         </div>
 
-
-        <!-- EXPENSE TOOLBAR -->
+        <!-- TOOLBAR -->
 
         <div class="toolbar">
 
           <div class="field">
-
             <label for="expense-search">
               Cari transaksi
             </label>
@@ -845,12 +840,9 @@
               type="search"
               placeholder="Cari judul..."
             >
-
           </div>
 
-
           <div class="field">
-
             <label for="expense-type-filter">
               Filter tipe
             </label>
@@ -859,7 +851,6 @@
               id="expense-type-filter"
               class="select"
             >
-
               <option value="all">
                 Semua tipe
               </option>
@@ -871,14 +862,10 @@
               <option value="Pengeluaran">
                 Pengeluaran
               </option>
-
             </select>
-
           </div>
 
-
           <div class="field">
-
             <label for="expense-sort">
               Urutkan
             </label>
@@ -887,7 +874,6 @@
               id="expense-sort"
               class="select"
             >
-
               <option value="newest">
                 Terbaru
               </option>
@@ -903,14 +889,10 @@
               <option value="lowest">
                 Jumlah terkecil
               </option>
-
             </select>
-
           </div>
 
-
           <div class="field">
-
             <label>&nbsp;</label>
 
             <button
@@ -920,17 +902,14 @@
             >
               + Tambah
             </button>
-
           </div>
 
         </div>
-
 
         <div
           id="expense-list"
           class="item-list"
         ></div>
-
 
         <div
           id="expense-empty"
@@ -941,19 +920,18 @@
 
       </section>
 
-
-      <!-- =================================================
-           BOOKMARK MANAGER
-      ================================================== -->
+      <!-- ===================================================
+           BOOKMARK PANEL
+      ==================================================== -->
 
       <section
         id="panel-bookmark"
         class="panel hidden"
+        role="tabpanel"
         aria-labelledby="bookmark-title"
       >
 
         <div class="panel-header">
-
           <h2 id="bookmark-title">
             Bookmark Manager
           </h2>
@@ -961,16 +939,11 @@
           <p>
             Simpan dan kelola tautan favorit kamu.
           </p>
-
         </div>
-
-
-        <!-- BOOKMARK TOOLBAR -->
 
         <div class="toolbar">
 
           <div class="field">
-
             <label for="bookmark-search">
               Cari bookmark
             </label>
@@ -981,12 +954,9 @@
               type="search"
               placeholder="Cari judul, URL, kategori..."
             >
-
           </div>
 
-
           <div class="field">
-
             <label for="bookmark-category-filter">
               Filter kategori
             </label>
@@ -995,18 +965,13 @@
               id="bookmark-category-filter"
               class="select"
             >
-
               <option value="all">
                 Semua kategori
               </option>
-
             </select>
-
           </div>
 
-
           <div class="field">
-
             <label for="bookmark-sort">
               Urutkan
             </label>
@@ -1015,7 +980,6 @@
               id="bookmark-sort"
               class="select"
             >
-
               <option value="newest">
                 Terbaru
               </option>
@@ -1027,14 +991,10 @@
               <option value="za">
                 Judul Z-A
               </option>
-
             </select>
-
           </div>
 
-
           <div class="field">
-
             <label>&nbsp;</label>
 
             <button
@@ -1044,17 +1004,14 @@
             >
               + Tambah
             </button>
-
           </div>
 
         </div>
-
 
         <div
           id="bookmark-list"
           class="item-list"
         ></div>
-
 
         <div
           id="bookmark-empty"
@@ -1064,20 +1021,18 @@
         </div>
 
       </section>
-
-
-      <!-- =================================================
-           QUIZ APP
-      ================================================== -->
+            <!-- ===================================================
+           QUIZ PANEL
+      ==================================================== -->
 
       <section
         id="panel-quiz"
         class="panel hidden"
+        role="tabpanel"
         aria-labelledby="quiz-title"
       >
 
         <div class="panel-header">
-
           <h2 id="quiz-title">
             Quiz App
           </h2>
@@ -1085,24 +1040,18 @@
           <p>
             Uji pemahaman dasar HTML, CSS, dan JavaScript.
           </p>
-
         </div>
-
 
         <div class="quiz-score">
-
           High Score:
           <span id="high-score">0</span>
-
         </div>
 
-
-        <!-- QUIZ START -->
+        <!-- START -->
 
         <div id="quiz-start">
 
           <div class="empty-state">
-
             <h3 style="margin-bottom: 8px;">
               Siap mengerjakan kuis?
             </h3>
@@ -1118,13 +1067,11 @@
             >
               Mulai Kuis
             </button>
-
           </div>
 
         </div>
 
-
-        <!-- QUIZ QUESTION -->
+        <!-- QUESTION -->
 
         <div
           id="quiz-question-area"
@@ -1146,21 +1093,17 @@
 
           </div>
 
-
           <div
             id="quiz-options"
             class="quiz-options"
           ></div>
-
 
           <div
             id="quiz-feedback"
             class="quiz-feedback hidden"
           ></div>
 
-
           <div style="margin-top: 18px;">
-
             <button
               id="next-question-btn"
               type="button"
@@ -1168,13 +1111,11 @@
             >
               Soal Berikutnya
             </button>
-
           </div>
 
         </div>
 
-
-        <!-- QUIZ RESULT -->
+        <!-- RESULT -->
 
         <div
           id="quiz-result"
@@ -1212,10 +1153,9 @@
     </div>
   </main>
 
-
-  <!-- =====================================================
+  <!-- =======================================================
        EXPENSE MODAL
-  ====================================================== -->
+  ======================================================== -->
 
   <div
     id="expense-modal"
@@ -1229,7 +1169,6 @@
       class="modal-backdrop"
       data-close-modal="expense"
     ></div>
-
 
     <div class="modal-content">
 
@@ -1250,14 +1189,12 @@
 
       </div>
 
-
       <form
         id="expense-form"
         class="modal-form"
       >
 
         <div class="field">
-
           <label for="expense-title-input">
             Judul
           </label>
@@ -1270,12 +1207,9 @@
             required
             placeholder="Contoh: Beli makan siang"
           >
-
         </div>
 
-
         <div class="field">
-
           <label for="expense-category-input">
             Kategori
           </label>
@@ -1288,12 +1222,9 @@
             required
             placeholder="Contoh: Makanan"
           >
-
         </div>
 
-
         <div class="field">
-
           <label for="expense-amount-input">
             Jumlah
           </label>
@@ -1307,12 +1238,9 @@
             required
             placeholder="Contoh: 25000"
           >
-
         </div>
 
-
         <div class="field">
-
           <label for="expense-type-input">
             Tipe
           </label>
@@ -1322,7 +1250,6 @@
             class="select"
             required
           >
-
             <option value="Pengeluaran">
               Pengeluaran
             </option>
@@ -1330,14 +1257,10 @@
             <option value="Pemasukan">
               Pemasukan
             </option>
-
           </select>
-
         </div>
 
-
         <div class="field">
-
           <label for="expense-date-input">
             Tanggal
           </label>
@@ -1348,9 +1271,7 @@
             type="date"
             required
           >
-
         </div>
-
 
         <div class="modal-actions">
 
@@ -1374,13 +1295,11 @@
       </form>
 
     </div>
-
   </div>
 
-
-  <!-- =====================================================
+  <!-- =======================================================
        BOOKMARK MODAL
-  ====================================================== -->
+  ======================================================== -->
 
   <div
     id="bookmark-modal"
@@ -1394,7 +1313,6 @@
       class="modal-backdrop"
       data-close-modal="bookmark"
     ></div>
-
 
     <div class="modal-content">
 
@@ -1415,14 +1333,12 @@
 
       </div>
 
-
       <form
         id="bookmark-form"
         class="modal-form"
       >
 
         <div class="field">
-
           <label for="bookmark-title-input">
             Judul
           </label>
@@ -1435,12 +1351,9 @@
             required
             placeholder="Contoh: W3Schools"
           >
-
         </div>
 
-
         <div class="field">
-
           <label for="bookmark-url-input">
             URL
           </label>
@@ -1452,12 +1365,9 @@
             required
             placeholder="https://example.com"
           >
-
         </div>
 
-
         <div class="field">
-
           <label for="bookmark-category-input">
             Kategori
           </label>
@@ -1470,12 +1380,9 @@
             required
             placeholder="Contoh: Belajar"
           >
-
         </div>
 
-
         <div class="field">
-
           <label for="bookmark-note-input">
             Catatan
           </label>
@@ -1486,9 +1393,7 @@
             maxlength="300"
             placeholder="Catatan singkat (opsional)"
           ></textarea>
-
         </div>
-
 
         <div class="modal-actions">
 
@@ -1512,13 +1417,11 @@
       </form>
 
     </div>
-
   </div>
 
-
-  <!-- =====================================================
+  <!-- =======================================================
        DELETE MODAL
-  ====================================================== -->
+  ======================================================== -->
 
   <div
     id="delete-modal"
@@ -1532,7 +1435,6 @@
       class="modal-backdrop"
       data-close-modal="delete"
     ></div>
-
 
     <div class="modal-content">
 
@@ -1553,14 +1455,12 @@
 
       </div>
 
-
       <p
         id="delete-message"
-        style="color: #334155; margin-bottom: 20px;"
+        style="color: var(--text-secondary); margin-bottom: 20px;"
       >
         Yakin ingin menghapus data ini?
       </p>
-
 
       <div class="modal-actions">
 
@@ -1583,31 +1483,15 @@
       </div>
 
     </div>
-
   </div>
 
-
-  <!-- =====================================================
-       FOOTER
-  ====================================================== -->
-
   <footer>
-
     <div class="container">
       FenyHub &copy; 2026
     </div>
-
   </footer>
 
-
-  <!-- =====================================================
-       JAVASCRIPT
-       Folder sudah lowercase: assets
-  ====================================================== -->
-
-  <script src="assets/script.js"></script>
+  <script src="assets/script.js" defer></script>
 
 </body>
 </html>
-
-
