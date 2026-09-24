@@ -1,1497 +1,2393 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>FenyHub - Productivity Dashboard</title>
-
-  <meta
-    name="description"
-    content="FenyHub adalah aplikasi web sederhana untuk mencatat transaksi, menyimpan bookmark, dan mengerjakan kuis interaktif."
-  >
-
-  <style>
-    /* =========================================================
-       RESET & GLOBAL
-    ========================================================= */
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --primary-light: #dbeafe;
-
-      --success: #059669;
-      --success-light: #d1fae5;
-
-      --danger: #dc2626;
-      --danger-light: #fee2e2;
-
-      --warning: #d97706;
-      --warning-light: #fef3c7;
-
-      --text: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #475569;
-
-      --background: #f8fafc;
-      --surface: #ffffff;
-      --border: #e2e8f0;
-
-      --radius: 14px;
-      --shadow: 0 4px 16px rgba(15, 23, 42, 0.07);
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      min-height: 100vh;
-      background: var(--background);
-      color: var(--text);
-      font-family:
-        Inter,
-        ui-sans-serif,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-      line-height: 1.6;
-    }
-
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    a {
-      color: inherit;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* =========================================================
-       LAYOUT
-    ========================================================= */
-
-    .container {
-      width: min(1100px, calc(100% - 32px));
-      margin-inline: auto;
-    }
-
-    .page-header {
-      background: linear-gradient(
-        135deg,
-        #1d4ed8,
-        #2563eb
-      );
-      color: white;
-      padding: 42px 0 34px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .brand-icon {
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.16);
-      font-size: 21px;
-      font-weight: 800;
-    }
-
-    .brand h1 {
-      font-size: clamp(1.6rem, 4vw, 2.2rem);
-      line-height: 1.2;
-    }
-
-    .page-description {
-      max-width: 700px;
-      color: #dbeafe;
-      font-size: 1rem;
-    }
-
-    main {
-      padding: 28px 0 50px;
-    }
-
-    /* =========================================================
-       TABS
-    ========================================================= */
-
-    .tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 6px;
-      margin-bottom: 24px;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-    }
-
-    .tab-btn {
-      flex: 1;
-      min-width: 150px;
-      border: 0;
-      border-radius: 10px;
-      padding: 12px 16px;
-      background: transparent;
-      color: var(--text-secondary);
-      font-weight: 700;
-      transition:
-        background 0.2s ease,
-        color 0.2s ease;
-    }
-
-    .tab-btn:hover {
-      background: #f1f5f9;
-      color: var(--text);
-    }
-
-    .tab-btn.active {
-      background: var(--primary);
-      color: white;
-    }
-
-    .tab-btn:focus-visible,
-    button:focus-visible,
-    input:focus-visible,
-    select:focus-visible,
-    textarea:focus-visible,
-    a:focus-visible {
-      outline: 3px solid #93c5fd;
-      outline-offset: 2px;
-    }
-
-    /* =========================================================
-       PANEL
-    ========================================================= */
-
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 24px;
-    }
-
-    .panel-header {
-      margin-bottom: 22px;
-    }
-
-    .panel-header h2 {
-      font-size: 1.4rem;
-      margin-bottom: 5px;
-    }
-
-    .panel-header p {
-      color: var(--text-secondary);
-    }
-
-    /* =========================================================
-       SUMMARY
-    ========================================================= */
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-bottom: 22px;
-    }
-
-    .summary-card {
-      padding: 18px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: #f8fafc;
-    }
-
-    .summary-label {
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      margin-bottom: 5px;
-    }
-
-    .summary-value {
-      font-size: 1.35rem;
-      font-weight: 800;
-    }
-
-    .income {
-      color: var(--success);
-    }
-
-    .expense {
-      color: var(--danger);
-    }
-
-    .balance {
-      color: var(--primary-dark);
-    }
-
-    /* =========================================================
-       TOOLBAR
-    ========================================================= */
-
-    .toolbar {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr auto;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .field label {
-      font-size: 0.86rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-    }
-
-    .input,
-    .select,
-    .textarea {
-      width: 100%;
-      border: 1px solid #cbd5e1;
-      border-radius: 9px;
-      background: white;
-      color: var(--text);
-      padding: 10px 12px;
-    }
-
-    .textarea {
-      min-height: 90px;
-      resize: vertical;
-    }
-
-    .input::placeholder,
-    .textarea::placeholder {
-      color: #64748b;
-    }
-
-    .input:focus,
-    .select:focus,
-    .textarea:focus {
-      border-color: var(--primary);
-      outline: 2px solid #bfdbfe;
-    }
-
-    /* =========================================================
-       BUTTONS
-    ========================================================= */
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      min-height: 42px;
-      padding: 10px 15px;
-      border: 0;
-      border-radius: 9px;
-      font-weight: 700;
-      text-decoration: none;
-      transition:
-        background 0.2s ease,
-        transform 0.15s ease;
-    }
-
-    .btn:hover {
-      transform: translateY(-1px);
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-dark);
-    }
-
-    .btn-secondary {
-      background: #e2e8f0;
-      color: #1e293b;
-    }
-
-    .btn-secondary:hover {
-      background: #cbd5e1;
-    }
-
-    .btn-danger {
-      background: var(--danger);
-      color: white;
-    }
-
-    .btn-danger:hover {
-      background: #b91c1c;
-    }
-
-    .btn-small {
-      min-height: 34px;
-      padding: 7px 11px;
-      font-size: 0.85rem;
-    }
-
-    /* =========================================================
-       LIST & CARDS
-    ========================================================= */
-
-    .item-list {
-      display: grid;
-      gap: 12px;
-    }
-
-    .item-card {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      background: white;
-    }
-
-    .item-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 15px;
-    }
-
-    .item-title {
-      font-size: 1rem;
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    .item-meta {
-      color: var(--text-secondary);
-      font-size: 0.88rem;
-    }
-
-    .item-actions {
-      display: flex;
-      gap: 7px;
-      flex-wrap: wrap;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 999px;
-      padding: 4px 9px;
-      font-size: 0.75rem;
-      font-weight: 800;
-      margin-top: 9px;
-    }
-
-    .badge-income {
-      background: var(--success-light);
-      color: #065f46;
-    }
-
-    .badge-expense {
-      background: var(--danger-light);
-      color: #991b1b;
-    }
-
-    .badge-category {
-      background: var(--primary-light);
-      color: #1e40af;
-    }
-
-    .bookmark-url {
+/* =========================================================
+   FenyHub - JavaScript
+   Expense Tracker + Bookmark Manager + Quiz App
+========================================================= */
+
+"use strict";
+
+/* =========================================================
+   UTILITIES
+========================================================= */
+
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function loadJSON(key, fallback = []) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveJSON(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function formatRupiah(value) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0
+  }).format(Number(value) || 0);
+}
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function createId(prefix) {
+  if (window.crypto?.randomUUID) {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+
+  return `${prefix}-${Date.now()}-${Math.random()
+    .toString(16)
+    .slice(2)}`;
+}
+
+/* Inline validation: tidak menggunakan alert() */
+function showFieldError(input, message) {
+  if (!input) return false;
+
+  clearFieldError(input);
+
+  const error = document.createElement("small");
+  error.className = "field-error";
+  error.textContent = message;
+  error.setAttribute("role", "alert");
+
+  input.setAttribute("aria-invalid", "true");
+  input.insertAdjacentElement("afterend", error);
+
+  input.focus();
+  return false;
+}
+
+function clearFieldError(input) {
+  if (!input) return;
+
+  input.removeAttribute("aria-invalid");
+
+  const next = input.nextElementSibling;
+
+  if (next?.classList.contains("field-error")) {
+    next.remove();
+  }
+}
+
+function clearFormErrors(form) {
+  if (!form) return;
+
+  form.querySelectorAll(".field-error")
+    .forEach((item) => item.remove());
+
+  form
+    .querySelectorAll("[aria-invalid='true']")
+    .forEach((input) => {
+      input.removeAttribute("aria-invalid");
+    });
+}
+
+function addValidationStyles() {
+  if ($("#fenyhub-validation-style")) return;
+
+  const style = document.createElement("style");
+
+  style.id = "fenyhub-validation-style";
+
+  style.textContent = `
+    .field-error {
       display: block;
-      margin: 6px 0;
-      color: #1d4ed8;
-      font-size: 0.9rem;
-      word-break: break-all;
+      margin-top: 4px;
+      color: #b91c1c;
+      font-size: 0.82rem;
+      font-weight: 600;
     }
 
-    .bookmark-note {
-      margin-top: 8px;
-      color: var(--text-secondary);
-      font-size: 0.88rem;
+    [aria-invalid="true"] {
+      border-color: #dc2626 !important;
+      outline-color: #fecaca !important;
     }
+  `;
 
-    .empty-state {
-      padding: 36px 20px;
-      text-align: center;
-      border: 1px dashed #cbd5e1;
-      border-radius: 12px;
-      color: var(--text-secondary);
-      background: #f8fafc;
+  document.head.appendChild(style);
+}
+
+/* =========================================================
+   TAB SWITCHER
+========================================================= */
+
+const VALID_TABS = [
+  "expense",
+  "bookmark",
+  "quiz"
+];
+
+const tabButtons = $$(".tab-btn");
+
+const panels = {
+  expense: $("#panel-expense"),
+  bookmark: $("#panel-bookmark"),
+  quiz: $("#panel-quiz")
+};
+
+function getTabFromUrl() {
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const tab = params.get("tab");
+
+  return VALID_TABS.includes(tab)
+    ? tab
+    : "expense";
+}
+
+function updateTabUI(name) {
+  const activeTab =
+    VALID_TABS.includes(name)
+      ? name
+      : "expense";
+
+  Object.entries(panels).forEach(
+    ([key, panel]) => {
+      if (!panel) return;
+
+      const active =
+        key === activeTab;
+
+      panel.classList.toggle(
+        "hidden",
+        !active
+      );
+
+      panel.setAttribute(
+        "aria-hidden",
+        String(!active)
+      );
     }
+  );
 
-    /* =========================================================
-       QUIZ
-    ========================================================= */
+  tabButtons.forEach((button) => {
+    const active =
+      button.dataset.tab === activeTab;
 
-    .quiz-score {
-      margin-bottom: 20px;
-      padding: 14px 16px;
-      border-radius: 10px;
-      background: #eff6ff;
-      color: #1e40af;
-      font-weight: 700;
+    button.classList.toggle(
+      "active",
+      active
+    );
+
+    button.setAttribute(
+      "aria-selected",
+      String(active)
+    );
+
+    button.setAttribute(
+      "tabindex",
+      active ? "0" : "-1"
+    );
+  });
+}
+
+function setTab(
+  name,
+  { historyMode = "push" } = {}
+) {
+  const activeTab =
+    VALID_TABS.includes(name)
+      ? name
+      : "expense";
+
+  updateTabUI(activeTab);
+
+  const url =
+    new URL(window.location.href);
+
+  url.searchParams.set(
+    "tab",
+    activeTab
+  );
+
+  if (historyMode === "push") {
+    window.history.pushState(
+      { tab: activeTab },
+      "",
+      url
+    );
+  } else {
+    window.history.replaceState(
+      { tab: activeTab },
+      "",
+      url
+    );
+  }
+}
+
+tabButtons.forEach((button) => {
+  button.addEventListener(
+    "click",
+    () => {
+      setTab(
+        button.dataset.tab,
+        {
+          historyMode: "push"
+        }
+      );
     }
+  );
+});
 
-    .quiz-question {
-      margin-bottom: 18px;
+window.addEventListener(
+  "popstate",
+  () => {
+    updateTabUI(
+      getTabFromUrl()
+    );
+  }
+);
+
+const initialTab =
+  getTabFromUrl();
+
+if (
+  !new URLSearchParams(
+    window.location.search
+  ).has("tab")
+) {
+  setTab(
+    initialTab,
+    {
+      historyMode: "replace"
     }
+  );
+} else {
+  updateTabUI(initialTab);
+}
 
-    .quiz-number {
-      color: var(--primary);
-      font-size: 0.88rem;
-      font-weight: 800;
-      margin-bottom: 6px;
-    }
+/* =========================================================
+   MODAL
+========================================================= */
 
-    .quiz-question h3 {
-      font-size: 1.15rem;
-      line-height: 1.45;
-    }
+function openModal(modal) {
+  if (!modal) return;
 
-    .quiz-options {
-      display: grid;
-      gap: 10px;
-      margin-top: 18px;
-    }
+  modal.classList.add("open");
 
-    .quiz-option {
-      width: 100%;
-      text-align: left;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      padding: 13px 14px;
-      background: white;
-      color: var(--text);
-      transition:
-        border-color 0.2s ease,
-        background 0.2s ease;
-    }
+  document.body.style.overflow =
+    "hidden";
 
-    .quiz-option:hover:not(:disabled) {
-      border-color: var(--primary);
-      background: #eff6ff;
-    }
+  const firstInput =
+    modal.querySelector(
+      "input:not([type='hidden']), select, textarea, button"
+    );
 
-    .quiz-option:disabled {
-      cursor: default;
-    }
+  firstInput?.focus();
+}
 
-    .quiz-option.correct {
-      border-color: #10b981;
-      background: #d1fae5;
-      color: #065f46;
-    }
+function closeModal(modal) {
+  if (!modal) return;
 
-    .quiz-option.wrong {
-      border-color: #ef4444;
-      background: #fee2e2;
-      color: #991b1b;
-    }
+  modal.classList.remove("open");
 
-    .quiz-feedback {
-      margin-top: 16px;
-      padding: 14px;
-      border-radius: 10px;
-      font-weight: 700;
-    }
+  if (!$(".modal.open")) {
+    document.body.style.overflow =
+      "";
+  }
+}
 
-    .feedback-correct {
-      background: #d1fae5;
-      color: #065f46;
-    }
+$$("[data-close-modal]").forEach(
+  (button) => {
+    button.addEventListener(
+      "click",
+      () => {
+        const name =
+          button.dataset.closeModal;
 
-    .feedback-wrong {
-      background: #fee2e2;
-      color: #991b1b;
-    }
+        if (name === "expense") {
+          closeModal(
+            $("#expense-modal")
+          );
+        }
 
-    .quiz-result {
-      text-align: center;
-      padding: 25px 10px;
-    }
+        if (name === "bookmark") {
+          closeModal(
+            $("#bookmark-modal")
+          );
+        }
 
-    .quiz-result-score {
-      font-size: 2.4rem;
-      font-weight: 900;
-      color: var(--primary);
-      margin: 10px 0;
-    }
+        if (name === "delete") {
+          closeModal(
+            $("#delete-modal")
+          );
 
-    /* =========================================================
-       MODAL
-    ========================================================= */
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .modal.open {
-      display: flex;
-    }
-
-    .modal-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.55);
-    }
-
-    .modal-content {
-      position: relative;
-      width: min(520px, 100%);
-      max-height: 90vh;
-      overflow-y: auto;
-      background: white;
-      border-radius: 16px;
-      padding: 22px;
-      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .modal-header h3 {
-      font-size: 1.2rem;
-    }
-
-    .modal-close {
-      border: 0;
-      background: #f1f5f9;
-      color: #334155;
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      font-size: 1.2rem;
-    }
-
-    .modal-form {
-      display: grid;
-      gap: 14px;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 5px;
-    }
-
-    /* =========================================================
-       FOOTER
-    ========================================================= */
-
-    footer {
-      padding: 25px 0 35px;
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-    }
-
-    /* =========================================================
-       RESPONSIVE
-    ========================================================= */
-
-    @media (max-width: 800px) {
-      .toolbar {
-        grid-template-columns: 1fr 1fr;
+          deleteTarget = null;
+        }
       }
+    );
+  }
+);
 
-      .summary-grid {
-        grid-template-columns: 1fr;
+document.addEventListener(
+  "keydown",
+  (event) => {
+    if (event.key !== "Escape") return;
+
+    $$(".modal.open").forEach(
+      (modal) => {
+        closeModal(modal);
+      }
+    );
+
+    deleteTarget = null;
+  }
+);
+
+/* =========================================================
+   EXPENSE TRACKER
+========================================================= */
+
+const EXPENSE_KEY =
+  "fenyhub_expenses";
+
+let expenses =
+  loadJSON(
+    EXPENSE_KEY,
+    []
+  );
+
+let editingExpenseId = null;
+
+const expenseForm =
+  $("#expense-form");
+
+const expenseModal =
+  $("#expense-modal");
+
+const expenseModalTitle =
+  $("#expense-modal-title");
+
+const expenseTitleInput =
+  $("#expense-title-input");
+
+const expenseCategoryInput =
+  $("#expense-category-input");
+
+const expenseAmountInput =
+  $("#expense-amount-input");
+
+const expenseTypeInput =
+  $("#expense-type-input");
+
+const expenseDateInput =
+  $("#expense-date-input");
+
+const expenseSearch =
+  $("#expense-search");
+
+const expenseTypeFilter =
+  $("#expense-type-filter");
+
+const expenseSort =
+  $("#expense-sort");
+
+const expenseList =
+  $("#expense-list");
+
+const expenseEmpty =
+  $("#expense-empty");
+
+const totalIncome =
+  $("#total-income");
+
+const totalExpense =
+  $("#total-expense");
+
+const totalBalance =
+  $("#total-balance");
+
+function resetExpenseForm() {
+  expenseForm.reset();
+
+  clearFormErrors(
+    expenseForm
+  );
+
+  expenseDateInput.value =
+    todayISO();
+
+  expenseTypeInput.value =
+    "Pengeluaran";
+
+  editingExpenseId =
+    null;
+
+  expenseModalTitle.textContent =
+    "Tambah Transaksi";
+}
+
+function openExpenseCreate() {
+  resetExpenseForm();
+
+  openModal(
+    expenseModal
+  );
+}
+
+function openExpenseEdit(id) {
+  const item =
+    expenses.find(
+      (expense) =>
+        expense.id === id
+    );
+
+  if (!item) return;
+
+  editingExpenseId = id;
+
+  expenseModalTitle.textContent =
+    "Ubah Transaksi";
+
+  expenseTitleInput.value =
+    item.title;
+
+  expenseCategoryInput.value =
+    item.category;
+
+  expenseAmountInput.value =
+    item.amount;
+
+  expenseTypeInput.value =
+    item.type;
+
+  expenseDateInput.value =
+    item.date;
+
+  clearFormErrors(
+    expenseForm
+  );
+
+  openModal(
+    expenseModal
+  );
+}
+
+function validateExpense() {
+  clearFormErrors(
+    expenseForm
+  );
+
+  if (
+    !expenseTitleInput.value.trim()
+  ) {
+    return showFieldError(
+      expenseTitleInput,
+      "Judul transaksi wajib diisi."
+    );
+  }
+
+  if (
+    !expenseCategoryInput.value.trim()
+  ) {
+    return showFieldError(
+      expenseCategoryInput,
+      "Kategori wajib diisi."
+    );
+  }
+
+  const amount =
+    Number(
+      expenseAmountInput.value
+    );
+
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ) {
+    return showFieldError(
+      expenseAmountInput,
+      "Jumlah harus berupa angka lebih dari 0."
+    );
+  }
+
+  if (
+    !expenseDateInput.value
+  ) {
+    return showFieldError(
+      expenseDateInput,
+      "Tanggal wajib diisi."
+    );
+  }
+
+  return true;
+}
+
+function renderExpenseSummary() {
+  const income =
+    expenses
+      .filter(
+        (item) =>
+          item.type ===
+          "Pemasukan"
+      )
+      .reduce(
+        (sum, item) =>
+          sum +
+          Number(
+            item.amount
+          ),
+        0
+      );
+
+  const expense =
+    expenses
+      .filter(
+        (item) =>
+          item.type ===
+          "Pengeluaran"
+      )
+      .reduce(
+        (sum, item) =>
+          sum +
+          Number(
+            item.amount
+          ),
+        0
+      );
+
+  totalIncome.textContent =
+    formatRupiah(income);
+
+  totalExpense.textContent =
+    formatRupiah(expense);
+
+  totalBalance.textContent =
+    formatRupiah(
+      income - expense
+    );
+}
+
+function getFilteredExpenses() {
+  const query =
+    expenseSearch.value
+      .trim()
+      .toLowerCase();
+
+  const type =
+    expenseTypeFilter.value;
+
+  const sort =
+    expenseSort.value;
+
+  let result =
+    expenses.filter(
+      (item) => {
+        const matchesSearch =
+          item.title
+            .toLowerCase()
+            .includes(query) ||
+          item.category
+            .toLowerCase()
+            .includes(query);
+
+        const matchesType =
+          type === "all" ||
+          item.type === type;
+
+        return (
+          matchesSearch &&
+          matchesType
+        );
+      }
+    );
+
+  result.sort(
+    (a, b) => {
+      switch (sort) {
+        case "oldest":
+          return (
+            new Date(a.date) -
+            new Date(b.date)
+          );
+
+        case "highest":
+          return (
+            Number(b.amount) -
+            Number(a.amount)
+          );
+
+        case "lowest":
+          return (
+            Number(a.amount) -
+            Number(b.amount)
+          );
+
+        case "newest":
+        default:
+          return (
+            new Date(b.date) -
+            new Date(a.date)
+          );
       }
     }
+  );
 
-    @media (max-width: 600px) {
-      .container {
-        width: min(100% - 22px, 1100px);
-      }
+  return result;
+}
 
-      .page-header {
-        padding: 30px 0 25px;
-      }
+function renderExpenses() {
+  renderExpenseSummary();
 
-      main {
-        padding-top: 18px;
-      }
+  const items =
+    getFilteredExpenses();
 
-      .panel {
-        padding: 17px;
-      }
+  expenseList.innerHTML =
+    "";
 
-      .toolbar {
-        grid-template-columns: 1fr;
-      }
+  if (
+    expenses.length === 0
+  ) {
+    expenseEmpty.classList.remove(
+      "hidden"
+    );
 
-      .tabs {
-        flex-direction: column;
-      }
+    return;
+  }
 
-      .tab-btn {
-        width: 100%;
-      }
+  expenseEmpty.classList.toggle(
+    "hidden",
+    items.length !== 0
+  );
 
-      .item-card-header {
-        flex-direction: column;
-      }
+  if (
+    items.length === 0
+  ) {
+    const empty =
+      document.createElement(
+        "div"
+      );
 
-      .item-actions {
-        width: 100%;
-      }
+    empty.className =
+      "empty-state";
 
-      .item-actions .btn {
-        flex: 1;
-      }
+    empty.textContent =
+      "Tidak ada transaksi yang cocok.";
 
-      .modal-actions {
-        flex-direction: column-reverse;
-      }
+    expenseList.appendChild(
+      empty
+    );
 
-      .modal-actions .btn {
-        width: 100%;
-      }
-    }
-  </style>
-</head>
+    return;
+  }
 
-<body>
+  items.forEach(
+    (item) => {
+      const article =
+        document.createElement(
+          "article"
+        );
 
-  <!-- =======================================================
-       HEADER
-  ======================================================== -->
+      article.className =
+        "item-card";
 
-  <header class="page-header">
-    <div class="container">
-      <div class="brand">
-        <div class="brand-icon" aria-hidden="true">F</div>
+      const safeTitle =
+        escapeHtml(
+          item.title
+        );
 
+      const safeCategory =
+        escapeHtml(
+          item.category
+        );
+
+      const safeDate =
+        escapeHtml(
+          item.date
+        );
+
+      const typeClass =
+        item.type ===
+        "Pemasukan"
+          ? "badge-income"
+          : "badge-expense";
+
+      article.innerHTML = `
+      <div class="item-card-header">
         <div>
-          <h1>FenyHub</h1>
-        </div>
-      </div>
+          <div class="item-title">${safeTitle}</div>
 
-      <p class="page-description">
-        Dashboard sederhana untuk mengelola pengeluaran,
-        bookmark, dan kuis interaktif dalam satu aplikasi.
-      </p>
-    </div>
-  </header>
-
-  <!-- =======================================================
-       MAIN
-  ======================================================== -->
-
-  <main>
-    <div class="container">
-
-      <!-- TAB NAVIGATION -->
-
-      <nav class="tabs" role="tablist" aria-label="Navigasi fitur">
-        <button
-          type="button"
-          class="tab-btn"
-          data-tab="expense"
-          role="tab"
-          aria-selected="false"
-          aria-controls="panel-expense"
-        >
-          Expense Tracker
-        </button>
-
-        <button
-          type="button"
-          class="tab-btn"
-          data-tab="bookmark"
-          role="tab"
-          aria-selected="false"
-          aria-controls="panel-bookmark"
-        >
-          Bookmark Manager
-        </button>
-
-        <button
-          type="button"
-          class="tab-btn"
-          data-tab="quiz"
-          role="tab"
-          aria-selected="false"
-          aria-controls="panel-quiz"
-        >
-          Quiz App
-        </button>
-      </nav>
-
-      <!-- ===================================================
-           EXPENSE PANEL
-      ==================================================== -->
-
-      <section
-        id="panel-expense"
-        class="panel"
-        role="tabpanel"
-        aria-labelledby="expense-title"
-      >
-
-        <div class="panel-header">
-          <h2 id="expense-title">Expense Tracker</h2>
-
-          <p>
-            Catat pemasukan dan pengeluaran dengan mudah.
-          </p>
-        </div>
-
-        <!-- SUMMARY -->
-
-        <div class="summary-grid">
-
-          <article class="summary-card">
-            <div class="summary-label">
-              Total Pemasukan
-            </div>
-
-            <div
-              id="total-income"
-              class="summary-value income"
-            >
-              Rp0
-            </div>
-          </article>
-
-          <article class="summary-card">
-            <div class="summary-label">
-              Total Pengeluaran
-            </div>
-
-            <div
-              id="total-expense"
-              class="summary-value expense"
-            >
-              Rp0
-            </div>
-          </article>
-
-          <article class="summary-card">
-            <div class="summary-label">
-              Saldo
-            </div>
-
-            <div
-              id="total-balance"
-              class="summary-value balance"
-            >
-              Rp0
-            </div>
-          </article>
-
-        </div>
-
-        <!-- TOOLBAR -->
-
-        <div class="toolbar">
-
-          <div class="field">
-            <label for="expense-search">
-              Cari transaksi
-            </label>
-
-            <input
-              id="expense-search"
-              class="input"
-              type="search"
-              placeholder="Cari judul..."
-            >
+          <div class="item-meta">
+            ${safeCategory} • ${safeDate}
           </div>
 
-          <div class="field">
-            <label for="expense-type-filter">
-              Filter tipe
-            </label>
-
-            <select
-              id="expense-type-filter"
-              class="select"
-            >
-              <option value="all">
-                Semua tipe
-              </option>
-
-              <option value="Pemasukan">
-                Pemasukan
-              </option>
-
-              <option value="Pengeluaran">
-                Pengeluaran
-              </option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="expense-sort">
-              Urutkan
-            </label>
-
-            <select
-              id="expense-sort"
-              class="select"
-            >
-              <option value="newest">
-                Terbaru
-              </option>
-
-              <option value="oldest">
-                Terlama
-              </option>
-
-              <option value="highest">
-                Jumlah terbesar
-              </option>
-
-              <option value="lowest">
-                Jumlah terkecil
-              </option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>&nbsp;</label>
-
-            <button
-              id="add-expense-btn"
-              type="button"
-              class="btn btn-primary"
-            >
-              + Tambah
-            </button>
-          </div>
-
-        </div>
-
-        <div
-          id="expense-list"
-          class="item-list"
-        ></div>
-
-        <div
-          id="expense-empty"
-          class="empty-state hidden"
-        >
-          Belum ada transaksi.
-        </div>
-
-      </section>
-
-      <!-- ===================================================
-           BOOKMARK PANEL
-      ==================================================== -->
-
-      <section
-        id="panel-bookmark"
-        class="panel hidden"
-        role="tabpanel"
-        aria-labelledby="bookmark-title"
-      >
-
-        <div class="panel-header">
-          <h2 id="bookmark-title">
-            Bookmark Manager
-          </h2>
-
-          <p>
-            Simpan dan kelola tautan favorit kamu.
-          </p>
-        </div>
-
-        <div class="toolbar">
-
-          <div class="field">
-            <label for="bookmark-search">
-              Cari bookmark
-            </label>
-
-            <input
-              id="bookmark-search"
-              class="input"
-              type="search"
-              placeholder="Cari judul, URL, kategori..."
-            >
-          </div>
-
-          <div class="field">
-            <label for="bookmark-category-filter">
-              Filter kategori
-            </label>
-
-            <select
-              id="bookmark-category-filter"
-              class="select"
-            >
-              <option value="all">
-                Semua kategori
-              </option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="bookmark-sort">
-              Urutkan
-            </label>
-
-            <select
-              id="bookmark-sort"
-              class="select"
-            >
-              <option value="newest">
-                Terbaru
-              </option>
-
-              <option value="az">
-                Judul A-Z
-              </option>
-
-              <option value="za">
-                Judul Z-A
-              </option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>&nbsp;</label>
-
-            <button
-              id="add-bookmark-btn"
-              type="button"
-              class="btn btn-primary"
-            >
-              + Tambah
-            </button>
-          </div>
-
-        </div>
-
-        <div
-          id="bookmark-list"
-          class="item-list"
-        ></div>
-
-        <div
-          id="bookmark-empty"
-          class="empty-state hidden"
-        >
-          Belum ada bookmark.
-        </div>
-
-      </section>
-            <!-- ===================================================
-           QUIZ PANEL
-      ==================================================== -->
-
-      <section
-        id="panel-quiz"
-        class="panel hidden"
-        role="tabpanel"
-        aria-labelledby="quiz-title"
-      >
-
-        <div class="panel-header">
-          <h2 id="quiz-title">
-            Quiz App
-          </h2>
-
-          <p>
-            Uji pemahaman dasar HTML, CSS, dan JavaScript.
-          </p>
-        </div>
-
-        <div class="quiz-score">
-          High Score:
-          <span id="high-score">0</span>
-        </div>
-
-        <!-- START -->
-
-        <div id="quiz-start">
-
-          <div class="empty-state">
-            <h3 style="margin-bottom: 8px;">
-              Siap mengerjakan kuis?
-            </h3>
-
-            <p style="margin-bottom: 18px;">
-              Terdapat 6 soal pilihan ganda.
-            </p>
-
-            <button
-              id="start-quiz-btn"
-              type="button"
-              class="btn btn-primary"
-            >
-              Mulai Kuis
-            </button>
-          </div>
-
-        </div>
-
-        <!-- QUESTION -->
-
-        <div
-          id="quiz-question-area"
-          class="hidden"
-        >
-
-          <div class="quiz-question">
-
-            <div
-              id="quiz-progress"
-              class="quiz-number"
-            >
-              Soal 1 dari 6
-            </div>
-
-            <h3 id="quiz-question">
-              Pertanyaan
-            </h3>
-
-          </div>
+          <span class="badge ${typeClass}">
+            ${escapeHtml(item.type)}
+          </span>
 
           <div
-            id="quiz-options"
-            class="quiz-options"
-          ></div>
-
-          <div
-            id="quiz-feedback"
-            class="quiz-feedback hidden"
-          ></div>
-
-          <div style="margin-top: 18px;">
-            <button
-              id="next-question-btn"
-              type="button"
-              class="btn btn-primary hidden"
-            >
-              Soal Berikutnya
-            </button>
-          </div>
-
-        </div>
-
-        <!-- RESULT -->
-
-        <div
-          id="quiz-result"
-          class="quiz-result hidden"
-        >
-
-          <h3>
-            Kuis Selesai!
-          </h3>
-
-          <div
-            id="quiz-result-score"
-            class="quiz-result-score"
+            class="item-title"
+            style="margin-top: 8px;"
           >
-            0 / 6
+            ${formatRupiah(
+              item.amount
+            )}
           </div>
+        </div>
 
-          <p
-            id="quiz-result-message"
-            style="margin-bottom: 18px;"
-          ></p>
-
+        <div class="item-actions">
           <button
-            id="restart-quiz-btn"
             type="button"
-            class="btn btn-primary"
+            class="btn btn-secondary btn-small"
+            data-expense-edit="${escapeHtml(
+              item.id
+            )}"
           >
-            Main Lagi
+            Ubah
           </button>
-
-        </div>
-
-      </section>
-
-    </div>
-  </main>
-
-  <!-- =======================================================
-       EXPENSE MODAL
-  ======================================================== -->
-
-  <div
-    id="expense-modal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="expense-modal-title"
-  >
-
-    <div
-      class="modal-backdrop"
-      data-close-modal="expense"
-    ></div>
-
-    <div class="modal-content">
-
-      <div class="modal-header">
-
-        <h3 id="expense-modal-title">
-          Tambah Transaksi
-        </h3>
-
-        <button
-          type="button"
-          class="modal-close"
-          data-close-modal="expense"
-          aria-label="Tutup modal"
-        >
-          ×
-        </button>
-
-      </div>
-
-      <form
-        id="expense-form"
-        class="modal-form"
-      >
-
-        <div class="field">
-          <label for="expense-title-input">
-            Judul
-          </label>
-
-          <input
-            id="expense-title-input"
-            class="input"
-            type="text"
-            maxlength="80"
-            required
-            placeholder="Contoh: Beli makan siang"
-          >
-        </div>
-
-        <div class="field">
-          <label for="expense-category-input">
-            Kategori
-          </label>
-
-          <input
-            id="expense-category-input"
-            class="input"
-            type="text"
-            maxlength="40"
-            required
-            placeholder="Contoh: Makanan"
-          >
-        </div>
-
-        <div class="field">
-          <label for="expense-amount-input">
-            Jumlah
-          </label>
-
-          <input
-            id="expense-amount-input"
-            class="input"
-            type="number"
-            min="1"
-            step="1"
-            required
-            placeholder="Contoh: 25000"
-          >
-        </div>
-
-        <div class="field">
-          <label for="expense-type-input">
-            Tipe
-          </label>
-
-          <select
-            id="expense-type-input"
-            class="select"
-            required
-          >
-            <option value="Pengeluaran">
-              Pengeluaran
-            </option>
-
-            <option value="Pemasukan">
-              Pemasukan
-            </option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="expense-date-input">
-            Tanggal
-          </label>
-
-          <input
-            id="expense-date-input"
-            class="input"
-            type="date"
-            required
-          >
-        </div>
-
-        <div class="modal-actions">
 
           <button
             type="button"
-            class="btn btn-secondary"
-            data-close-modal="expense"
+            class="btn btn-danger btn-small"
+            data-expense-delete="${escapeHtml(
+              item.id
+            )}"
           >
-            Batal
+            Hapus
           </button>
-
-          <button
-            type="submit"
-            class="btn btn-primary"
-          >
-            Simpan
-          </button>
-
         </div>
-
-      </form>
-
-    </div>
-  </div>
-
-  <!-- =======================================================
-       BOOKMARK MODAL
-  ======================================================== -->
-
-  <div
-    id="bookmark-modal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="bookmark-modal-title"
-  >
-
-    <div
-      class="modal-backdrop"
-      data-close-modal="bookmark"
-    ></div>
-
-    <div class="modal-content">
-
-      <div class="modal-header">
-
-        <h3 id="bookmark-modal-title">
-          Tambah Bookmark
-        </h3>
-
-        <button
-          type="button"
-          class="modal-close"
-          data-close-modal="bookmark"
-          aria-label="Tutup modal"
-        >
-          ×
-        </button>
-
       </div>
+    `;
 
-      <form
-        id="bookmark-form"
-        class="modal-form"
-      >
+      expenseList.appendChild(
+        article
+      );
+    }
+  );
+}
 
-        <div class="field">
-          <label for="bookmark-title-input">
-            Judul
-          </label>
+expenseForm.addEventListener(
+  "submit",
+  (event) => {
+    event.preventDefault();
 
-          <input
-            id="bookmark-title-input"
-            class="input"
-            type="text"
-            maxlength="100"
-            required
-            placeholder="Contoh: W3Schools"
+    if (
+      !validateExpense()
+    ) {
+      return;
+    }
+
+    const data = {
+      title:
+        expenseTitleInput
+          .value
+          .trim(),
+
+      category:
+        expenseCategoryInput
+          .value
+          .trim(),
+
+      amount:
+        Number(
+          expenseAmountInput
+            .value
+        ),
+
+      type:
+        expenseTypeInput
+          .value,
+
+      date:
+        expenseDateInput
+          .value
+    };
+
+    if (editingExpenseId) {
+      const index =
+        expenses.findIndex(
+          (item) =>
+            item.id ===
+            editingExpenseId
+        );
+
+      if (index !== -1) {
+        expenses[index] = {
+          ...expenses[index],
+          ...data
+        };
+      }
+    } else {
+      expenses.push({
+        id: createId(
+          "expense"
+        ),
+        ...data,
+        createdAt: Date.now()
+      });
+    }
+
+    saveJSON(
+      EXPENSE_KEY,
+      expenses
+    );
+
+    renderExpenses();
+
+    resetExpenseForm();
+
+    closeModal(
+      expenseModal
+    );
+  }
+);
+
+$("#add-expense-btn").addEventListener(
+  "click",
+  openExpenseCreate
+);
+
+expenseSearch.addEventListener(
+  "input",
+  renderExpenses
+);
+
+expenseTypeFilter.addEventListener(
+  "change",
+  renderExpenses
+);
+
+expenseSort.addEventListener(
+  "change",
+  renderExpenses
+);
+
+expenseList.addEventListener(
+  "click",
+  (event) => {
+    const editButton =
+      event.target.closest(
+        "[data-expense-edit]"
+      );
+
+    const deleteButton =
+      event.target.closest(
+        "[data-expense-delete]"
+      );
+
+    if (editButton) {
+      openExpenseEdit(
+        editButton.dataset
+          .expenseEdit
+      );
+
+      return;
+    }
+
+    if (deleteButton) {
+      openDeleteConfirmation(
+        "expense",
+        deleteButton.dataset
+          .expenseDelete
+      );
+    }
+  }
+);
+
+/* =========================================================
+   BOOKMARK MANAGER
+========================================================= */
+
+const BOOKMARK_KEY =
+  "fenyhub_bookmarks";
+
+let bookmarks =
+  loadJSON(
+    BOOKMARK_KEY,
+    []
+  );
+
+let editingBookmarkId =
+  null;
+
+const bookmarkForm =
+  $("#bookmark-form");
+
+const bookmarkModal =
+  $("#bookmark-modal");
+
+const bookmarkModalTitle =
+  $("#bookmark-modal-title");
+
+const bookmarkTitleInput =
+  $("#bookmark-title-input");
+
+const bookmarkUrlInput =
+  $("#bookmark-url-input");
+
+const bookmarkCategoryInput =
+  $("#bookmark-category-input");
+
+const bookmarkNoteInput =
+  $("#bookmark-note-input");
+
+const bookmarkSearch =
+  $("#bookmark-search");
+
+const bookmarkCategoryFilter =
+  $("#bookmark-category-filter");
+
+const bookmarkSort =
+  $("#bookmark-sort");
+
+const bookmarkList =
+  $("#bookmark-list");
+
+const bookmarkEmpty =
+  $("#bookmark-empty");
+  function resetBookmarkForm() {
+  bookmarkForm.reset();
+
+  clearFormErrors(
+    bookmarkForm
+  );
+
+  editingBookmarkId = null;
+
+  bookmarkModalTitle.textContent =
+    "Tambah Bookmark";
+}
+
+function openBookmarkCreate() {
+  resetBookmarkForm();
+
+  openModal(
+    bookmarkModal
+  );
+}
+
+function openBookmarkEdit(id) {
+  const item =
+    bookmarks.find(
+      (bookmark) =>
+        bookmark.id === id
+    );
+
+  if (!item) return;
+
+  editingBookmarkId = id;
+
+  bookmarkModalTitle.textContent =
+    "Ubah Bookmark";
+
+  bookmarkTitleInput.value =
+    item.title;
+
+  bookmarkUrlInput.value =
+    item.url;
+
+  bookmarkCategoryInput.value =
+    item.category;
+
+  bookmarkNoteInput.value =
+    item.note || "";
+
+  clearFormErrors(
+    bookmarkForm
+  );
+
+  openModal(
+    bookmarkModal
+  );
+}
+
+function isHttpUrl(value) {
+  try {
+    const url =
+      new URL(value);
+
+    return (
+      url.protocol ===
+        "http:" ||
+      url.protocol ===
+        "https:"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function validateBookmark() {
+  clearFormErrors(
+    bookmarkForm
+  );
+
+  if (
+    !bookmarkTitleInput.value.trim()
+  ) {
+    return showFieldError(
+      bookmarkTitleInput,
+      "Judul bookmark wajib diisi."
+    );
+  }
+
+  const url =
+    bookmarkUrlInput.value.trim();
+
+  if (!url) {
+    return showFieldError(
+      bookmarkUrlInput,
+      "URL wajib diisi."
+    );
+  }
+
+  if (!isHttpUrl(url)) {
+    return showFieldError(
+      bookmarkUrlInput,
+      "URL harus menggunakan http:// atau https://."
+    );
+  }
+
+  if (
+    !bookmarkCategoryInput.value.trim()
+  ) {
+    return showFieldError(
+      bookmarkCategoryInput,
+      "Kategori wajib diisi."
+    );
+  }
+
+  return true;
+}
+
+function renderBookmarkCategories() {
+  const current =
+    bookmarkCategoryFilter.value;
+
+  const categories = [
+    ...new Set(
+      bookmarks
+        .map(
+          (item) =>
+            item.category.trim()
+        )
+        .filter(Boolean)
+    )
+  ].sort(
+    (a, b) =>
+      a.localeCompare(
+        b,
+        "id"
+      )
+  );
+
+  bookmarkCategoryFilter.innerHTML = `
+    <option value="all">
+      Semua kategori
+    </option>
+  `;
+
+  categories.forEach(
+    (category) => {
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        category;
+
+      option.textContent =
+        category;
+
+      bookmarkCategoryFilter.appendChild(
+        option
+      );
+    }
+  );
+
+  if (
+    current === "all" ||
+    categories.includes(current)
+  ) {
+    bookmarkCategoryFilter.value =
+      current;
+  }
+}
+
+function getFilteredBookmarks() {
+  const query =
+    bookmarkSearch.value
+      .trim()
+      .toLowerCase();
+
+  const category =
+    bookmarkCategoryFilter.value;
+
+  const sort =
+    bookmarkSort.value;
+
+  let result =
+    bookmarks.filter(
+      (item) => {
+        const text = [
+          item.title,
+          item.url,
+          item.category,
+          item.note || ""
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        const matchesSearch =
+          text.includes(
+            query
+          );
+
+        const matchesCategory =
+          category === "all" ||
+          item.category ===
+            category;
+
+        return (
+          matchesSearch &&
+          matchesCategory
+        );
+      }
+    );
+
+  result.sort(
+    (a, b) => {
+      switch (sort) {
+        case "az":
+          return a.title.localeCompare(
+            b.title,
+            "id"
+          );
+
+        case "za":
+          return b.title.localeCompare(
+            a.title,
+            "id"
+          );
+
+        case "newest":
+        default:
+          return (
+            Number(
+              b.createdAt
+            ) -
+            Number(
+              a.createdAt
+            )
+          );
+      }
+    }
+  );
+
+  return result;
+}
+
+function renderBookmarks() {
+  renderBookmarkCategories();
+
+  const items =
+    getFilteredBookmarks();
+
+  bookmarkList.innerHTML =
+    "";
+
+  if (
+    bookmarks.length === 0
+  ) {
+    bookmarkEmpty.classList.remove(
+      "hidden"
+    );
+
+    return;
+  }
+
+  bookmarkEmpty.classList.toggle(
+    "hidden",
+    items.length !== 0
+  );
+
+  if (
+    items.length === 0
+  ) {
+    const empty =
+      document.createElement(
+        "div"
+      );
+
+    empty.className =
+      "empty-state";
+
+    empty.textContent =
+      "Tidak ada bookmark yang cocok.";
+
+    bookmarkList.appendChild(
+      empty
+    );
+
+    return;
+  }
+
+  items.forEach(
+    (item) => {
+      const article =
+        document.createElement(
+          "article"
+        );
+
+      article.className =
+        "item-card";
+
+      article.innerHTML = `
+      <div class="item-card-header">
+        <div>
+          <div class="item-title">
+            ${escapeHtml(
+              item.title
+            )}
+          </div>
+
+          <a
+            class="bookmark-url"
+            href="${escapeHtml(
+              item.url
+            )}"
+            target="_blank"
+            rel="noopener noreferrer"
           >
+            ${escapeHtml(
+              item.url
+            )}
+          </a>
+
+          <span class="badge badge-category">
+            ${escapeHtml(
+              item.category
+            )}
+          </span>
+
+          ${
+            item.note
+              ? `<p class="bookmark-note">${escapeHtml(
+                  item.note
+                )}</p>`
+              : ""
+          }
         </div>
 
-        <div class="field">
-          <label for="bookmark-url-input">
-            URL
-          </label>
-
-          <input
-            id="bookmark-url-input"
-            class="input"
-            type="url"
-            required
-            placeholder="https://example.com"
+        <div class="item-actions">
+          <button
+            type="button"
+            class="btn btn-secondary btn-small"
+            data-bookmark-edit="${escapeHtml(
+              item.id
+            )}"
           >
-        </div>
-
-        <div class="field">
-          <label for="bookmark-category-input">
-            Kategori
-          </label>
-
-          <input
-            id="bookmark-category-input"
-            class="input"
-            type="text"
-            maxlength="40"
-            required
-            placeholder="Contoh: Belajar"
-          >
-        </div>
-
-        <div class="field">
-          <label for="bookmark-note-input">
-            Catatan
-          </label>
-
-          <textarea
-            id="bookmark-note-input"
-            class="textarea"
-            maxlength="300"
-            placeholder="Catatan singkat (opsional)"
-          ></textarea>
-        </div>
-
-        <div class="modal-actions">
+            Ubah
+          </button>
 
           <button
             type="button"
-            class="btn btn-secondary"
-            data-close-modal="bookmark"
+            class="btn btn-danger btn-small"
+            data-bookmark-delete="${escapeHtml(
+              item.id
+            )}"
           >
-            Batal
+            Hapus
+          </button>
+        </div>
+      </div>
+    `;
+
+      bookmarkList.appendChild(
+        article
+      );
+    }
+  );
+}
+
+bookmarkForm.addEventListener(
+  "submit",
+  (event) => {
+    event.preventDefault();
+
+    if (
+      !validateBookmark()
+    ) {
+      return;
+    }
+
+    const data = {
+      title:
+        bookmarkTitleInput
+          .value
+          .trim(),
+
+      url:
+        bookmarkUrlInput
+          .value
+          .trim(),
+
+      category:
+        bookmarkCategoryInput
+          .value
+          .trim(),
+
+      note:
+        bookmarkNoteInput
+          .value
+          .trim()
+    };
+
+    if (editingBookmarkId) {
+      const index =
+        bookmarks.findIndex(
+          (item) =>
+            item.id ===
+            editingBookmarkId
+        );
+
+      if (index !== -1) {
+        bookmarks[index] = {
+          ...bookmarks[index],
+          ...data
+        };
+      }
+    } else {
+      bookmarks.push({
+        id: createId(
+          "bookmark"
+        ),
+        ...data,
+        createdAt: Date.now()
+      });
+    }
+
+    saveJSON(
+      BOOKMARK_KEY,
+      bookmarks
+    );
+
+    renderBookmarks();
+
+    resetBookmarkForm();
+
+    closeModal(
+      bookmarkModal
+    );
+  }
+);
+
+$("#add-bookmark-btn").addEventListener(
+  "click",
+  openBookmarkCreate
+);
+
+bookmarkSearch.addEventListener(
+  "input",
+  renderBookmarks
+);
+
+bookmarkCategoryFilter.addEventListener(
+  "change",
+  renderBookmarks
+);
+
+bookmarkSort.addEventListener(
+  "change",
+  renderBookmarks
+);
+
+bookmarkList.addEventListener(
+  "click",
+  (event) => {
+    const editButton =
+      event.target.closest(
+        "[data-bookmark-edit]"
+      );
+
+    const deleteButton =
+      event.target.closest(
+        "[data-bookmark-delete]"
+      );
+
+    if (editButton) {
+      openBookmarkEdit(
+        editButton.dataset
+          .bookmarkEdit
+      );
+
+      return;
+    }
+
+    if (deleteButton) {
+      openDeleteConfirmation(
+        "bookmark",
+        deleteButton.dataset
+          .bookmarkDelete
+      );
+    }
+  }
+);
+
+/* =========================================================
+   DELETE CONFIRMATION
+========================================================= */
+
+let deleteTarget = null;
+
+const deleteModal =
+  $("#delete-modal");
+
+const deleteMessage =
+  $("#delete-message");
+
+const deleteConfirmButton =
+  $("#delete-confirm-btn");
+
+function openDeleteConfirmation(
+  type,
+  id
+) {
+  deleteTarget = {
+    type,
+    id
+  };
+
+  const collection =
+    type === "expense"
+      ? expenses
+      : bookmarks;
+
+  const item =
+    collection.find(
+      (entry) =>
+        entry.id === id
+    );
+
+  if (!item) return;
+
+  deleteMessage.textContent =
+    `Yakin ingin menghapus "${item.title}"?`;
+
+  openModal(
+    deleteModal
+  );
+}
+
+deleteConfirmButton.addEventListener(
+  "click",
+  () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    if (
+      deleteTarget.type ===
+      "expense"
+    ) {
+      expenses =
+        expenses.filter(
+          (item) =>
+            item.id !==
+            deleteTarget.id
+        );
+
+      saveJSON(
+        EXPENSE_KEY,
+        expenses
+      );
+
+      renderExpenses();
+    }
+
+    if (
+      deleteTarget.type ===
+      "bookmark"
+    ) {
+      bookmarks =
+        bookmarks.filter(
+          (item) =>
+            item.id !==
+            deleteTarget.id
+        );
+
+      saveJSON(
+        BOOKMARK_KEY,
+        bookmarks
+      );
+
+      renderBookmarks();
+    }
+
+    deleteTarget = null;
+
+    closeModal(
+      deleteModal
+    );
+  }
+);
+
+/* =========================================================
+   QUIZ APP
+========================================================= */
+
+const QUIZ_HIGH_SCORE_KEY =
+  "fenyhub_quiz_high_score";
+
+const quizQuestions = [
+  {
+    question:
+      "Apa fungsi HTML dalam pengembangan web?",
+
+    options: [
+      "Menyusun struktur halaman",
+      "Mengatur database",
+      "Mengompresi gambar",
+      "Menjalankan server"
+    ],
+
+    answer: 0
+  },
+
+  {
+    question:
+      "Apa fungsi utama CSS?",
+
+    options: [
+      "Menyimpan data",
+      "Mengatur tampilan halaman",
+      "Membuat database",
+      "Mengirim request API"
+    ],
+
+    answer: 1
+  },
+
+  {
+    question:
+      "Bahasa yang digunakan untuk membuat halaman web menjadi interaktif adalah...",
+
+    options: [
+      "SQL",
+      "HTML",
+      "JavaScript",
+      "CSS"
+    ],
+
+    answer: 2
+  },
+
+  {
+    question:
+      "Method DOM yang digunakan untuk mencari elemen berdasarkan id adalah...",
+
+    options: [
+      "getElementById()",
+      "getClass()",
+      "findElement()",
+      "selectId()"
+    ],
+
+    answer: 0
+  },
+
+  {
+    question:
+      "Manakah yang digunakan untuk menyimpan data di browser?",
+
+    options: [
+      "localStorage",
+      "console.log",
+      "querySelector",
+      "addEventListener"
+    ],
+
+    answer: 0
+  },
+
+  {
+    question:
+      "Event yang terjadi ketika tombol ditekan adalah...",
+
+    options: [
+      "hover",
+      "submit",
+      "click",
+      "load"
+    ],
+
+    answer: 2
+  }
+];
+
+let quizIndex = 0;
+let quizScore = 0;
+let quizAnswered = false;
+let quizTimer = null;
+
+const quizStart =
+  $("#quiz-start");
+
+const quizQuestionArea =
+  $("#quiz-question-area");
+
+const quizQuestion =
+  $("#quiz-question");
+
+const quizProgress =
+  $("#quiz-progress");
+
+const quizOptions =
+  $("#quiz-options");
+
+const quizFeedback =
+  $("#quiz-feedback");
+
+const nextQuestionButton =
+  $("#next-question-btn");
+
+const quizResult =
+  $("#quiz-result");
+
+const quizResultScore =
+  $("#quiz-result-score");
+
+const quizResultMessage =
+  $("#quiz-result-message");
+
+const highScoreElement =
+  $("#high-score");
+  function resetBookmarkForm() {
+  bookmarkForm.reset();
+
+  clearFormErrors(
+    bookmarkForm
+  );
+
+  editingBookmarkId = null;
+
+  bookmarkModalTitle.textContent =
+    "Tambah Bookmark";
+}
+
+function openBookmarkCreate() {
+  resetBookmarkForm();
+
+  openModal(
+    bookmarkModal
+  );
+}
+
+function openBookmarkEdit(id) {
+  const item =
+    bookmarks.find(
+      (bookmark) =>
+        bookmark.id === id
+    );
+
+  if (!item) return;
+
+  editingBookmarkId = id;
+
+  bookmarkModalTitle.textContent =
+    "Ubah Bookmark";
+
+  bookmarkTitleInput.value =
+    item.title;
+
+  bookmarkUrlInput.value =
+    item.url;
+
+  bookmarkCategoryInput.value =
+    item.category;
+
+  bookmarkNoteInput.value =
+    item.note || "";
+
+  clearFormErrors(
+    bookmarkForm
+  );
+
+  openModal(
+    bookmarkModal
+  );
+}
+
+function isHttpUrl(value) {
+  try {
+    const url =
+      new URL(value);
+
+    return (
+      url.protocol ===
+        "http:" ||
+      url.protocol ===
+        "https:"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function validateBookmark() {
+  clearFormErrors(
+    bookmarkForm
+  );
+
+  if (
+    !bookmarkTitleInput.value.trim()
+  ) {
+    return showFieldError(
+      bookmarkTitleInput,
+      "Judul bookmark wajib diisi."
+    );
+  }
+
+  const url =
+    bookmarkUrlInput.value.trim();
+
+  if (!url) {
+    return showFieldError(
+      bookmarkUrlInput,
+      "URL wajib diisi."
+    );
+  }
+
+  if (!isHttpUrl(url)) {
+    return showFieldError(
+      bookmarkUrlInput,
+      "URL harus menggunakan http:// atau https://."
+    );
+  }
+
+  if (
+    !bookmarkCategoryInput.value.trim()
+  ) {
+    return showFieldError(
+      bookmarkCategoryInput,
+      "Kategori wajib diisi."
+    );
+  }
+
+  return true;
+}
+
+function renderBookmarkCategories() {
+  const current =
+    bookmarkCategoryFilter.value;
+
+  const categories = [
+    ...new Set(
+      bookmarks
+        .map(
+          (item) =>
+            item.category.trim()
+        )
+        .filter(Boolean)
+    )
+  ].sort(
+    (a, b) =>
+      a.localeCompare(
+        b,
+        "id"
+      )
+  );
+
+  bookmarkCategoryFilter.innerHTML = `
+    <option value="all">
+      Semua kategori
+    </option>
+  `;
+
+  categories.forEach(
+    (category) => {
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        category;
+
+      option.textContent =
+        category;
+
+      bookmarkCategoryFilter.appendChild(
+        option
+      );
+    }
+  );
+
+  if (
+    current === "all" ||
+    categories.includes(current)
+  ) {
+    bookmarkCategoryFilter.value =
+      current;
+  }
+}
+
+function getFilteredBookmarks() {
+  const query =
+    bookmarkSearch.value
+      .trim()
+      .toLowerCase();
+
+  const category =
+    bookmarkCategoryFilter.value;
+
+  const sort =
+    bookmarkSort.value;
+
+  let result =
+    bookmarks.filter(
+      (item) => {
+        const text = [
+          item.title,
+          item.url,
+          item.category,
+          item.note || ""
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        const matchesSearch =
+          text.includes(
+            query
+          );
+
+        const matchesCategory =
+          category === "all" ||
+          item.category ===
+            category;
+
+        return (
+          matchesSearch &&
+          matchesCategory
+        );
+      }
+    );
+
+  result.sort(
+    (a, b) => {
+      switch (sort) {
+        case "az":
+          return a.title.localeCompare(
+            b.title,
+            "id"
+          );
+
+        case "za":
+          return b.title.localeCompare(
+            a.title,
+            "id"
+          );
+
+        case "newest":
+        default:
+          return (
+            Number(
+              b.createdAt
+            ) -
+            Number(
+              a.createdAt
+            )
+          );
+      }
+    }
+  );
+
+  return result;
+}
+
+function renderBookmarks() {
+  renderBookmarkCategories();
+
+  const items =
+    getFilteredBookmarks();
+
+  bookmarkList.innerHTML =
+    "";
+
+  if (
+    bookmarks.length === 0
+  ) {
+    bookmarkEmpty.classList.remove(
+      "hidden"
+    );
+
+    return;
+  }
+
+  bookmarkEmpty.classList.toggle(
+    "hidden",
+    items.length !== 0
+  );
+
+  if (
+    items.length === 0
+  ) {
+    const empty =
+      document.createElement(
+        "div"
+      );
+
+    empty.className =
+      "empty-state";
+
+    empty.textContent =
+      "Tidak ada bookmark yang cocok.";
+
+    bookmarkList.appendChild(
+      empty
+    );
+
+    return;
+  }
+
+  items.forEach(
+    (item) => {
+      const article =
+        document.createElement(
+          "article"
+        );
+
+      article.className =
+        "item-card";
+
+      article.innerHTML = `
+      <div class="item-card-header">
+        <div>
+          <div class="item-title">
+            ${escapeHtml(
+              item.title
+            )}
+          </div>
+
+          <a
+            class="bookmark-url"
+            href="${escapeHtml(
+              item.url
+            )}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ${escapeHtml(
+              item.url
+            )}
+          </a>
+
+          <span class="badge badge-category">
+            ${escapeHtml(
+              item.category
+            )}
+          </span>
+
+          ${
+            item.note
+              ? `<p class="bookmark-note">${escapeHtml(
+                  item.note
+                )}</p>`
+              : ""
+          }
+        </div>
+
+        <div class="item-actions">
+          <button
+            type="button"
+            class="btn btn-secondary btn-small"
+            data-bookmark-edit="${escapeHtml(
+              item.id
+            )}"
+          >
+            Ubah
           </button>
 
           <button
-            type="submit"
-            class="btn btn-primary"
+            type="button"
+            class="btn btn-danger btn-small"
+            data-bookmark-delete="${escapeHtml(
+              item.id
+            )}"
           >
-            Simpan
+            Hapus
           </button>
-
         </div>
-
-      </form>
-
-    </div>
-  </div>
-
-  <!-- =======================================================
-       DELETE MODAL
-  ======================================================== -->
-
-  <div
-    id="delete-modal"
-    class="modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="delete-modal-title"
-  >
-
-    <div
-      class="modal-backdrop"
-      data-close-modal="delete"
-    ></div>
-
-    <div class="modal-content">
-
-      <div class="modal-header">
-
-        <h3 id="delete-modal-title">
-          Konfirmasi Hapus
-        </h3>
-
-        <button
-          type="button"
-          class="modal-close"
-          data-close-modal="delete"
-          aria-label="Tutup modal"
-        >
-          ×
-        </button>
-
       </div>
+    `;
 
-      <p
-        id="delete-message"
-        style="color: var(--text-secondary); margin-bottom: 20px;"
-      >
-        Yakin ingin menghapus data ini?
-      </p>
+      bookmarkList.appendChild(
+        article
+      );
+    }
+  );
+}
 
-      <div class="modal-actions">
+bookmarkForm.addEventListener(
+  "submit",
+  (event) => {
+    event.preventDefault();
 
-        <button
-          type="button"
-          class="btn btn-secondary"
-          data-close-modal="delete"
-        >
-          Batal
-        </button>
+    if (
+      !validateBookmark()
+    ) {
+      return;
+    }
 
-        <button
-          id="delete-confirm-btn"
-          type="button"
-          class="btn btn-danger"
-        >
-          Hapus
-        </button>
+    const data = {
+      title:
+        bookmarkTitleInput
+          .value
+          .trim(),
 
-      </div>
+      url:
+        bookmarkUrlInput
+          .value
+          .trim(),
 
-    </div>
-  </div>
+      category:
+        bookmarkCategoryInput
+          .value
+          .trim(),
 
-  <footer>
-    <div class="container">
-      FenyHub &copy; 2026
-    </div>
-  </footer>
+      note:
+        bookmarkNoteInput
+          .value
+          .trim()
+    };
 
-  <script src="assets/script.js" defer></script>
+    if (editingBookmarkId) {
+      const index =
+        bookmarks.findIndex(
+          (item) =>
+            item.id ===
+            editingBookmarkId
+        );
 
-</body>
-</html>
+      if (index !== -1) {
+        bookmarks[index] = {
+          ...bookmarks[index],
+          ...data
+        };
+      }
+    } else {
+      bookmarks.push({
+        id: createId(
+          "bookmark"
+        ),
+        ...data,
+        createdAt: Date.now()
+      });
+    }
+
+    saveJSON(
+      BOOKMARK_KEY,
+      bookmarks
+    );
+
+    renderBookmarks();
+
+    resetBookmarkForm();
+
+    closeModal(
+      bookmarkModal
+    );
+  }
+);
+
+$("#add-bookmark-btn").addEventListener(
+  "click",
+  openBookmarkCreate
+);
+
+bookmarkSearch.addEventListener(
+  "input",
+  renderBookmarks
+);
+
+bookmarkCategoryFilter.addEventListener(
+  "change",
+  renderBookmarks
+);
+
+bookmarkSort.addEventListener(
+  "change",
+  renderBookmarks
+);
+
+bookmarkList.addEventListener(
+  "click",
+  (event) => {
+    const editButton =
+      event.target.closest(
+        "[data-bookmark-edit]"
+      );
+
+    const deleteButton =
+      event.target.closest(
+        "[data-bookmark-delete]"
+      );
+
+    if (editButton) {
+      openBookmarkEdit(
+        editButton.dataset
+          .bookmarkEdit
+      );
+
+      return;
+    }
+
+    if (deleteButton) {
+      openDeleteConfirmation(
+        "bookmark",
+        deleteButton.dataset
+          .bookmarkDelete
+      );
+    }
+  }
+);
+
+/* =========================================================
+   DELETE CONFIRMATION
+========================================================= */
+
+let deleteTarget = null;
+
+const deleteModal =
+  $("#delete-modal");
+
+const deleteMessage =
+  $("#delete-message");
+
+const deleteConfirmButton =
+  $("#delete-confirm-btn");
+
+function openDeleteConfirmation(
+  type,
+  id
+) {
+  deleteTarget = {
+    type,
+    id
+  };
+
+  const collection =
+    type === "expense"
+      ? expenses
+      : bookmarks;
+
+  const item =
+    collection.find(
+      (entry) =>
+        entry.id === id
+    );
+
+  if (!item) return;
+
+  deleteMessage.textContent =
+    `Yakin ingin menghapus "${item.title}"?`;
+
+  openModal(
+    deleteModal
+  );
+}
+
+deleteConfirmButton.addEventListener(
+  "click",
+  () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    if (
+      deleteTarget.type ===
+      "expense"
+    ) {
+      expenses =
+        expenses.filter(
+          (item) =>
+            item.id !==
+            deleteTarget.id
+        );
+
+      saveJSON(
+        EXPENSE_KEY,
+        expenses
+      );
+
+      renderExpenses();
+    }
+
+    if (
+      deleteTarget.type ===
+      "bookmark"
+    ) {
+      bookmarks =
+        bookmarks.filter(
+          (item) =>
+            item.id !==
+            deleteTarget.id
+        );
+
+      saveJSON(
+        BOOKMARK_KEY,
+        bookmarks
+      );
+
+      renderBookmarks();
+    }
+
+    deleteTarget = null;
+
+    closeModal(
+      deleteModal
+    );
+  }
+);
+
+/* =========================================================
+   QUIZ APP
+========================================================= */
+
+const QUIZ_HIGH_SCORE_KEY =
+  "fenyhub_quiz_high_score";
+
+const quizQuestions = [
+  {
+    question:
+      "Apa fungsi HTML dalam pengembangan web?",
+
+    options: [
+      "Menyusun struktur halaman",
+      "Mengatur database",
+      "Mengompresi gambar",
+      "Menjalankan server"
+    ],
+
+    answer: 0
+  },
+
+  {
+    question:
+      "Apa fungsi utama CSS?",
+
+    options: [
+      "Menyimpan data",
+      "Mengatur tampilan halaman",
+      "Membuat database",
+      "Mengirim request API"
+    ],
+
+    answer: 1
+  },
+
+  {
+    question:
+      "Bahasa yang digunakan untuk membuat halaman web menjadi interaktif adalah...",
+
+    options: [
+      "SQL",
+      "HTML",
+      "JavaScript",
+      "CSS"
+    ],
+
+    answer: 2
+  },
+
+  {
+    question:
+      "Method DOM yang digunakan untuk mencari elemen berdasarkan id adalah...",
+
+    options: [
+      "getElementById()",
+      "getClass()",
+      "findElement()",
+      "selectId()"
+    ],
+
+    answer: 0
+  },
+
+  {
+    question:
+      "Manakah yang digunakan untuk menyimpan data di browser?",
+
+    options: [
+      "localStorage",
+      "console.log",
+      "querySelector",
+      "addEventListener"
+    ],
+
+    answer: 0
+  },
+
+  {
+    question:
+      "Event yang terjadi ketika tombol ditekan adalah...",
+
+    options: [
+      "hover",
+      "submit",
+      "click",
+      "load"
+    ],
+
+    answer: 2
+  }
+];
+
+let quizIndex = 0;
+let quizScore = 0;
+let quizAnswered = false;
+let quizTimer = null;
+
+const quizStart =
+  $("#quiz-start");
+
+const quizQuestionArea =
+  $("#quiz-question-area");
+
+const quizQuestion =
+  $("#quiz-question");
+
+const quizProgress =
+  $("#quiz-progress");
+
+const quizOptions =
+  $("#quiz-options");
+
+const quizFeedback =
+  $("#quiz-feedback");
+
+const nextQuestionButton =
+  $("#next-question-btn");
+
+const quizResult =
+  $("#quiz-result");
+
+const quizResultScore =
+  $("#quiz-result-score");
+
+const quizResultMessage =
+  $("#quiz-result-message");
+
+const highScoreElement =
+  $("#high-score");
