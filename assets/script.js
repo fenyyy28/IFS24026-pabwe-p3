@@ -1,16 +1,26 @@
-/* =========================================================
-   FenyHub
-   Expense Tracker + Bookmark Manager + Quiz App
-========================================================= */
-
 "use strict";
 
 /* =========================================================
-   UTILITIES
+   FenyHub - Utilities
 ========================================================= */
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+const VALID_TABS = [
+  "expense",
+  "bookmark",
+  "quiz"
+];
+
+/* Deklarasi state global di awal */
+let deleteTarget = null;
+let editingExpenseId = null;
+let editingBookmarkId = null;
+
+/* =========================================================
+   Utility Functions
+========================================================= */
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -31,24 +41,36 @@ function loadJSON(key, fallback = []) {
 }
 
 function saveJSON(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  localStorage.setItem(
+    key,
+    JSON.stringify(value)
+  );
 }
 
 function formatRupiah(value) {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0
-  }).format(Number(value) || 0);
+  return new Intl.NumberFormat(
+    "id-ID",
+    {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0
+    }
+  ).format(Number(value) || 0);
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return new Date()
+    .toISOString()
+    .slice(0, 10);
 }
 
 function createId(prefix) {
-  if (window.crypto?.randomUUID) {
-    return `${prefix}-${crypto.randomUUID()}`;
+  if (
+    window.crypto &&
+    typeof window.crypto.randomUUID ===
+      "function"
+  ) {
+    return `${prefix}-${window.crypto.randomUUID()}`;
   }
 
   return `${prefix}-${Date.now()}-${Math.random()
@@ -57,61 +79,104 @@ function createId(prefix) {
 }
 
 /* =========================================================
-   INLINE VALIDATION
-   Tidak menggunakan alert()
+   Inline Validation
 ========================================================= */
 
-function showFieldError(input, message) {
+function clearFieldError(input) {
+  if (!input) return;
+
+  input.removeAttribute(
+    "aria-invalid"
+  );
+
+  const error =
+    input.nextElementSibling;
+
+  if (
+    error &&
+    error.classList.contains(
+      "field-error"
+    )
+  ) {
+    error.remove();
+  }
+}
+
+function showFieldError(
+  input,
+  message
+) {
   if (!input) return false;
 
   clearFieldError(input);
 
-  const error = document.createElement("small");
+  input.setAttribute(
+    "aria-invalid",
+    "true"
+  );
 
-  error.className = "field-error";
-  error.textContent = message;
-  error.setAttribute("role", "alert");
+  const error =
+    document.createElement("small");
 
-  input.setAttribute("aria-invalid", "true");
+  error.className =
+    "field-error";
 
-  input.insertAdjacentElement("afterend", error);
+  error.setAttribute(
+    "role",
+    "alert"
+  );
+
+  error.textContent =
+    message;
+
+  input.insertAdjacentElement(
+    "afterend",
+    error
+  );
 
   input.focus();
 
   return false;
 }
 
-function clearFieldError(input) {
-  if (!input) return;
-
-  input.removeAttribute("aria-invalid");
-
-  const next = input.nextElementSibling;
-
-  if (next?.classList.contains("field-error")) {
-    next.remove();
-  }
-}
-
 function clearFormErrors(form) {
   if (!form) return;
 
-  form.querySelectorAll(".field-error")
-    .forEach((error) => error.remove());
+  form
+    .querySelectorAll(
+      ".field-error"
+    )
+    .forEach(
+      (error) =>
+        error.remove()
+    );
 
   form
-    .querySelectorAll("[aria-invalid='true']")
-    .forEach((input) => {
-      input.removeAttribute("aria-invalid");
-    });
+    .querySelectorAll(
+      "[aria-invalid='true']"
+    )
+    .forEach(
+      (input) =>
+        input.removeAttribute(
+          "aria-invalid"
+        )
+    );
 }
 
 function addValidationStyles() {
-  if ($("#fenyhub-validation-style")) return;
+  if (
+    $("#fenyhub-validation-style")
+  ) {
+    return;
+  }
 
-  const style = document.createElement("style");
+  const style =
+    document.createElement(
+      "style"
+    );
 
-  style.id = "fenyhub-validation-style";
+  style.id =
+    "fenyhub-validation-style";
 
   style.textContent = `
     .field-error {
@@ -128,135 +193,160 @@ function addValidationStyles() {
     }
   `;
 
-  document.head.appendChild(style);
+  document.head.appendChild(
+    style
+  );
 }
 
 /* =========================================================
-   TAB SWITCHER
+   TAB MANAGEMENT
 ========================================================= */
 
-const VALID_TABS = [
-  "expense",
-  "bookmark",
-  "quiz"
-];
-
-const tabButtons = $$(".tab-btn");
+const tabButtons =
+  $$(".tab-btn");
 
 const panels = {
-  expense: $("#panel-expense"),
-  bookmark: $("#panel-bookmark"),
-  quiz: $("#panel-quiz")
+  expense:
+    $("#panel-expense"),
+
+  bookmark:
+    $("#panel-bookmark"),
+
+  quiz:
+    $("#panel-quiz")
 };
 
 function getTabFromUrl() {
   const params =
-    new URLSearchParams(window.location.search);
+    new URLSearchParams(
+      window.location.search
+    );
 
-  const tab = params.get("tab");
+  const tab =
+    params.get("tab");
 
-  return VALID_TABS.includes(tab)
-    ? tab
-    : "expense";
+  if (
+    VALID_TABS.includes(tab)
+  ) {
+    return tab;
+  }
+
+  return "expense";
 }
 
-function updateTabUI(name) {
+function updateTabUI(tabName) {
   const activeTab =
-    VALID_TABS.includes(name)
-      ? name
+    VALID_TABS.includes(tabName)
+      ? tabName
       : "expense";
 
-  Object.entries(panels).forEach(
-    ([key, panel]) => {
+  Object.entries(
+    panels
+  ).forEach(
+    ([name, panel]) => {
       if (!panel) return;
 
-      const active = key === activeTab;
+      const isActive =
+        name === activeTab;
 
       panel.classList.toggle(
         "hidden",
-        !active
+        !isActive
       );
 
       panel.setAttribute(
         "aria-hidden",
-        String(!active)
+        String(!isActive)
       );
     }
   );
 
-  tabButtons.forEach((button) => {
-    const active =
-      button.dataset.tab === activeTab;
+  tabButtons.forEach(
+    (button) => {
+      const isActive =
+        button.dataset.tab ===
+        activeTab;
 
-    button.classList.toggle(
-      "active",
-      active
-    );
+      button.classList.toggle(
+        "active",
+        isActive
+      );
 
-    button.setAttribute(
-      "aria-selected",
-      String(active)
-    );
+      button.setAttribute(
+        "aria-selected",
+        String(isActive)
+      );
 
-    button.setAttribute(
-      "tabindex",
-      active ? "0" : "-1"
-    );
-  });
+      button.setAttribute(
+        "tabindex",
+        isActive
+          ? "0"
+          : "-1"
+      );
+    }
+  );
 }
 
 function setTab(
-  name,
-  { historyMode = "push" } = {}
+  tabName,
+  historyMode = "push"
 ) {
   const activeTab =
-    VALID_TABS.includes(name)
-      ? name
+    VALID_TABS.includes(
+      tabName
+    )
+      ? tabName
       : "expense";
 
-  updateTabUI(activeTab);
+  updateTabUI(
+    activeTab
+  );
 
   const url =
-    new URL(window.location.href);
+    new URL(
+      window.location.href
+    );
 
   url.searchParams.set(
     "tab",
     activeTab
   );
 
-  if (historyMode === "push") {
+  if (
+    historyMode === "push"
+  ) {
     window.history.pushState(
-      { tab: activeTab },
+      {
+        tab: activeTab
+      },
       "",
       url
     );
   } else {
     window.history.replaceState(
-      { tab: activeTab },
+      {
+        tab: activeTab
+      },
       "",
       url
     );
   }
 }
 
-tabButtons.forEach((button) => {
-  button.addEventListener(
-    "click",
-    () => {
-      setTab(
-        button.dataset.tab,
-        {
-          historyMode: "push"
-        }
-      );
-    }
-  );
-});
+tabButtons.forEach(
+  (button) => {
+    button.addEventListener(
+      "click",
+      () => {
+        setTab(
+          button.dataset.tab,
+          "push"
+        );
+      }
+    );
+  }
+);
 
-/*
-  Tombol Back/Forward browser
-  sekarang benar-benar mengubah tab.
-*/
 window.addEventListener(
   "popstate",
   () => {
@@ -276,22 +366,24 @@ if (
 ) {
   setTab(
     initialTab,
-    {
-      historyMode: "replace"
-    }
+    "replace"
   );
 } else {
-  updateTabUI(initialTab);
+  updateTabUI(
+    initialTab
+  );
 }
 
 /* =========================================================
-   MODAL
+   MODAL MANAGEMENT
 ========================================================= */
 
 function openModal(modal) {
   if (!modal) return;
 
-  modal.classList.add("open");
+  modal.classList.add(
+    "open"
+  );
 
   document.body.style.overflow =
     "hidden";
@@ -301,45 +393,65 @@ function openModal(modal) {
       "input:not([type='hidden']), select, textarea, button"
     );
 
-  firstInput?.focus();
+  if (firstInput) {
+    firstInput.focus();
+  }
 }
 
 function closeModal(modal) {
   if (!modal) return;
 
-  modal.classList.remove("open");
+  modal.classList.remove(
+    "open"
+  );
 
-  if (!$(".modal.open")) {
-    document.body.style.overflow = "";
+  if (
+    !$(".modal.open")
+  ) {
+    document.body.style.overflow =
+      "";
   }
 }
 
-$$("[data-close-modal]").forEach(
+$$(
+  "[data-close-modal]"
+).forEach(
   (button) => {
     button.addEventListener(
       "click",
       () => {
-        const name =
-          button.dataset.closeModal;
+        const modalName =
+          button.dataset
+            .closeModal;
 
-        if (name === "expense") {
+        if (
+          modalName ===
+          "expense"
+        ) {
           closeModal(
             $("#expense-modal")
           );
         }
 
-        if (name === "bookmark") {
+        if (
+          modalName ===
+          "bookmark"
+        ) {
           closeModal(
             $("#bookmark-modal")
           );
         }
 
-        if (name === "delete") {
+        if (
+          modalName ===
+          "delete"
+        ) {
           closeModal(
             $("#delete-modal")
           );
 
-          deleteTarget = null;
+          deleteTarget =
+            null;
         }
       }
     );
@@ -349,17 +461,24 @@ $$("[data-close-modal]").forEach(
 document.addEventListener(
   "keydown",
   (event) => {
-    if (event.key !== "Escape") {
+    if (
+      event.key !==
+      "Escape"
+    ) {
       return;
     }
 
-    $$(".modal.open").forEach(
-      (modal) => {
-        closeModal(modal);
-      }
-    );
+    $$(".modal.open")
+      .forEach(
+        (modal) => {
+          closeModal(
+            modal
+          );
+        }
+      );
 
-    deleteTarget = null;
+    deleteTarget =
+      null;
   }
 );
 
@@ -375,8 +494,6 @@ let expenses =
     EXPENSE_KEY,
     []
   );
-
-let editingExpenseId = null;
 
 const expenseForm =
   $("#expense-form");
@@ -439,7 +556,8 @@ function resetExpenseForm() {
   expenseTypeInput.value =
     "Pengeluaran";
 
-  editingExpenseId = null;
+  editingExpenseId =
+    null;
 
   expenseModalTitle.textContent =
     "Tambah Transaksi";
@@ -462,7 +580,8 @@ function openExpenseEdit(id) {
 
   if (!item) return;
 
-  editingExpenseId = id;
+  editingExpenseId =
+    id;
 
   expenseModalTitle.textContent =
     "Ubah Transaksi";
@@ -520,7 +639,9 @@ function validateExpense() {
     );
 
   if (
-    !Number.isFinite(amount) ||
+    !Number.isFinite(
+      amount
+    ) ||
     amount <= 0
   ) {
     return showFieldError(
@@ -546,11 +667,15 @@ function renderExpenseSummary() {
     expenses
       .filter(
         (item) =>
-          item.type === "Pemasukan"
+          item.type ===
+          "Pemasukan"
       )
       .reduce(
         (sum, item) =>
-          sum + Number(item.amount),
+          sum +
+          Number(
+            item.amount
+          ),
         0
       );
 
@@ -558,19 +683,27 @@ function renderExpenseSummary() {
     expenses
       .filter(
         (item) =>
-          item.type === "Pengeluaran"
+          item.type ===
+          "Pengeluaran"
       )
       .reduce(
         (sum, item) =>
-          sum + Number(item.amount),
+          sum +
+          Number(
+            item.amount
+          ),
         0
       );
 
   totalIncome.textContent =
-    formatRupiah(income);
+    formatRupiah(
+      income
+    );
 
   totalExpense.textContent =
-    formatRupiah(expense);
+    formatRupiah(
+      expense
+    );
 
   totalBalance.textContent =
     formatRupiah(
@@ -590,16 +723,24 @@ function getFilteredExpenses() {
   const sort =
     expenseSort.value;
 
-  let result =
+  const result =
     expenses.filter(
       (item) => {
-        const matchesSearch =
+        const title =
           item.title
-            .toLowerCase()
-            .includes(query) ||
+            .toLowerCase();
+
+        const category =
           item.category
-            .toLowerCase()
-            .includes(query);
+            .toLowerCase();
+
+        const matchesSearch =
+          title.includes(
+            query
+          ) ||
+          category.includes(
+            query
+          );
 
         const matchesType =
           type === "all" ||
@@ -614,32 +755,56 @@ function getFilteredExpenses() {
 
   result.sort(
     (a, b) => {
-      switch (sort) {
-        case "oldest":
-          return (
-            new Date(a.date) -
-            new Date(b.date)
-          );
-
-        case "highest":
-          return (
-            Number(b.amount) -
-            Number(a.amount)
-          );
-
-        case "lowest":
-          return (
-            Number(a.amount) -
-            Number(b.amount)
-          );
-
-        case "newest":
-        default:
-          return (
-            new Date(b.date) -
-            new Date(a.date)
-          );
+      if (
+        sort ===
+        "oldest"
+      ) {
+        return (
+          new Date(
+            a.date
+          ) -
+          new Date(
+            b.date
+          )
+        );
       }
+
+      if (
+        sort ===
+        "highest"
+      ) {
+        return (
+          Number(
+            b.amount
+          ) -
+          Number(
+            a.amount
+          )
+        );
+      }
+
+      if (
+        sort ===
+        "lowest"
+      ) {
+        return (
+          Number(
+            a.amount
+          ) -
+          Number(
+            b.amount
+          )
+        );
+      }
+
+      return (
+        new Date(
+          b.date
+        ) -
+        new Date(
+          a.date
+        )
+      );
     }
   );
 
@@ -652,10 +817,12 @@ function renderExpenses() {
   const items =
     getFilteredExpenses();
 
-  expenseList.innerHTML = "";
+  expenseList.innerHTML =
+    "";
 
   if (
-    expenses.length === 0
+    expenses.length ===
+    0
   ) {
     expenseEmpty.classList.remove(
       "hidden"
@@ -666,11 +833,13 @@ function renderExpenses() {
 
   expenseEmpty.classList.toggle(
     "hidden",
-    items.length !== 0
+    items.length !==
+      0
   );
 
   if (
-    items.length === 0
+    items.length ===
+    0
   ) {
     const empty =
       document.createElement(
@@ -701,33 +870,47 @@ function renderExpenses() {
         "item-card";
 
       const typeClass =
-        item.type === "Pemasukan"
+        item.type ===
+        "Pemasukan"
           ? "badge-income"
           : "badge-expense";
 
       article.innerHTML = `
         <div class="item-card-header">
+
           <div>
+
             <div class="item-title">
-              ${escapeHtml(item.title)}
+              ${escapeHtml(
+                item.title
+              )}
             </div>
 
             <div class="item-meta">
-              ${escapeHtml(item.category)}
+              ${escapeHtml(
+                item.category
+              )}
               •
-              ${escapeHtml(item.date)}
+              ${escapeHtml(
+                item.date
+              )}
             </div>
 
             <span class="badge ${typeClass}">
-              ${escapeHtml(item.type)}
+              ${escapeHtml(
+                item.type
+              )}
             </span>
 
             <div
               class="item-title"
               style="margin-top: 8px;"
             >
-              ${formatRupiah(item.amount)}
+              ${formatRupiah(
+                item.amount
+              )}
             </div>
+
           </div>
 
           <div class="item-actions">
@@ -735,7 +918,9 @@ function renderExpenses() {
             <button
               type="button"
               class="btn btn-secondary btn-small"
-              data-expense-edit="${escapeHtml(item.id)}"
+              data-expense-edit="${escapeHtml(
+                item.id
+              )}"
             >
               Ubah
             </button>
@@ -743,12 +928,15 @@ function renderExpenses() {
             <button
               type="button"
               class="btn btn-danger btn-small"
-              data-expense-delete="${escapeHtml(item.id)}"
+              data-expense-delete="${escapeHtml(
+                item.id
+              )}"
             >
               Hapus
             </button>
 
           </div>
+
         </div>
       `;
 
@@ -764,7 +952,9 @@ expenseForm.addEventListener(
   (event) => {
     event.preventDefault();
 
-    if (!validateExpense()) {
+    if (
+      !validateExpense()
+    ) {
       return;
     }
 
@@ -787,7 +977,9 @@ expenseForm.addEventListener(
         expenseDateInput.value
     };
 
-    if (editingExpenseId) {
+    if (
+      editingExpenseId
+    ) {
       const index =
         expenses.findIndex(
           (item) =>
@@ -795,7 +987,9 @@ expenseForm.addEventListener(
             editingExpenseId
         );
 
-      if (index !== -1) {
+      if (
+        index !== -1
+      ) {
         expenses[index] = {
           ...expenses[index],
           ...data
@@ -807,7 +1001,8 @@ expenseForm.addEventListener(
           "expense"
         ),
         ...data,
-        createdAt: Date.now()
+        createdAt:
+          Date.now()
       });
     }
 
@@ -860,7 +1055,9 @@ expenseList.addEventListener(
         "[data-expense-delete]"
       );
 
-    if (editButton) {
+    if (
+      editButton
+    ) {
       openExpenseEdit(
         editButton.dataset
           .expenseEdit
@@ -869,7 +1066,9 @@ expenseList.addEventListener(
       return;
     }
 
-    if (deleteButton) {
+    if (
+      deleteButton
+    ) {
       openDeleteConfirmation(
         "expense",
         deleteButton.dataset
@@ -891,9 +1090,6 @@ let bookmarks =
     BOOKMARK_KEY,
     []
   );
-
-let editingBookmarkId =
-  null;
 
 const bookmarkForm =
   $("#bookmark-form");
@@ -1029,7 +1225,9 @@ function validateBookmark() {
     );
   }
 
-  if (!isHttpUrl(url)) {
+  if (
+    !isHttpUrl(url)
+  ) {
     return showFieldError(
       bookmarkUrlInput,
       "URL harus menggunakan http:// atau https://."
@@ -1052,22 +1250,23 @@ function renderBookmarkCategories() {
   const current =
     bookmarkCategoryFilter.value;
 
-  const categories = [
-    ...new Set(
-      bookmarks
-        .map(
-          (item) =>
-            item.category.trim()
-        )
-        .filter(Boolean)
-    )
-  ].sort(
-    (a, b) =>
-      a.localeCompare(
-        b,
-        "id"
+  const categories =
+    [
+      ...new Set(
+        bookmarks
+          .map(
+            (item) =>
+              item.category.trim()
+          )
+          .filter(Boolean)
       )
-  );
+    ].sort(
+      (a, b) =>
+        a.localeCompare(
+          b,
+          "id"
+        )
+    );
 
   bookmarkCategoryFilter.innerHTML =
     `
@@ -1089,10 +1288,9 @@ function renderBookmarkCategories() {
       option.textContent =
         category;
 
-      bookmarkCategoryFilter
-        .appendChild(
-          option
-        );
+      bookmarkCategoryFilter.appendChild(
+        option
+      );
     }
   );
 
@@ -1119,7 +1317,7 @@ function getFilteredBookmarks() {
   const sort =
     bookmarkSort.value;
 
-  let result =
+  const result =
     bookmarks.filter(
       (item) => {
         const text = [
@@ -1132,10 +1330,13 @@ function getFilteredBookmarks() {
           .toLowerCase();
 
         const matchesSearch =
-          text.includes(query);
+          text.includes(
+            query
+          );
 
         const matchesCategory =
-          category === "all" ||
+          category ===
+            "all" ||
           item.category ===
             category;
 
@@ -1148,26 +1349,32 @@ function getFilteredBookmarks() {
 
   result.sort(
     (a, b) => {
-      switch (sort) {
-        case "az":
-          return a.title.localeCompare(
-            b.title,
-            "id"
-          );
-
-        case "za":
-          return b.title.localeCompare(
-            a.title,
-            "id"
-          );
-
-        case "newest":
-        default:
-          return (
-            Number(b.createdAt) -
-            Number(a.createdAt)
-          );
+      if (
+        sort === "az"
+      ) {
+        return a.title.localeCompare(
+          b.title,
+          "id"
+        );
       }
+
+      if (
+        sort === "za"
+      ) {
+        return b.title.localeCompare(
+          a.title,
+          "id"
+        );
+      }
+
+      return (
+        Number(
+          b.createdAt
+        ) -
+        Number(
+          a.createdAt
+        )
+      );
     }
   );
 
@@ -1184,7 +1391,8 @@ function renderBookmarks() {
     "";
 
   if (
-    bookmarks.length === 0
+    bookmarks.length ===
+    0
   ) {
     bookmarkEmpty.classList.remove(
       "hidden"
@@ -1195,11 +1403,13 @@ function renderBookmarks() {
 
   bookmarkEmpty.classList.toggle(
     "hidden",
-    items.length !== 0
+    items.length !==
+      0
   );
 
   if (
-    items.length === 0
+    items.length ===
+    0
   ) {
     const empty =
       document.createElement(
@@ -1235,27 +1445,37 @@ function renderBookmarks() {
           <div>
 
             <div class="item-title">
-              ${escapeHtml(item.title)}
+              ${escapeHtml(
+                item.title
+              )}
             </div>
 
             <a
               class="bookmark-url"
-              href="${escapeHtml(item.url)}"
+              href="${escapeHtml(
+                item.url
+              )}"
               target="_blank"
               rel="noopener noreferrer"
             >
-              ${escapeHtml(item.url)}
+              ${escapeHtml(
+                item.url
+              )}
             </a>
 
             <span class="badge badge-category">
-              ${escapeHtml(item.category)}
+              ${escapeHtml(
+                item.category
+              )}
             </span>
 
             ${
               item.note
                 ? `
                   <p class="bookmark-note">
-                    ${escapeHtml(item.note)}
+                    ${escapeHtml(
+                      item.note
+                    )}
                   </p>
                 `
                 : ""
@@ -1268,7 +1488,9 @@ function renderBookmarks() {
             <button
               type="button"
               class="btn btn-secondary btn-small"
-              data-bookmark-edit="${escapeHtml(item.id)}"
+              data-bookmark-edit="${escapeHtml(
+                item.id
+              )}"
             >
               Ubah
             </button>
@@ -1276,7 +1498,9 @@ function renderBookmarks() {
             <button
               type="button"
               class="btn btn-danger btn-small"
-              data-bookmark-delete="${escapeHtml(item.id)}"
+              data-bookmark-delete="${escapeHtml(
+                item.id
+              )}"
             >
               Hapus
             </button>
@@ -1298,7 +1522,9 @@ bookmarkForm.addEventListener(
   (event) => {
     event.preventDefault();
 
-    if (!validateBookmark()) {
+    if (
+      !validateBookmark()
+    ) {
       return;
     }
 
@@ -1316,7 +1542,9 @@ bookmarkForm.addEventListener(
         bookmarkNoteInput.value.trim()
     };
 
-    if (editingBookmarkId) {
+    if (
+      editingBookmarkId
+    ) {
       const index =
         bookmarks.findIndex(
           (item) =>
@@ -1324,7 +1552,9 @@ bookmarkForm.addEventListener(
             editingBookmarkId
         );
 
-      if (index !== -1) {
+      if (
+        index !== -1
+      ) {
         bookmarks[index] = {
           ...bookmarks[index],
           ...data
@@ -1336,7 +1566,8 @@ bookmarkForm.addEventListener(
           "bookmark"
         ),
         ...data,
-        createdAt: Date.now()
+        createdAt:
+          Date.now()
       });
     }
 
@@ -1389,7 +1620,9 @@ bookmarkList.addEventListener(
         "[data-bookmark-delete]"
       );
 
-    if (editButton) {
+    if (
+      editButton
+    ) {
       openBookmarkEdit(
         editButton.dataset
           .bookmarkEdit
@@ -1398,7 +1631,9 @@ bookmarkList.addEventListener(
       return;
     }
 
-    if (deleteButton) {
+    if (
+      deleteButton
+    ) {
       openDeleteConfirmation(
         "bookmark",
         deleteButton.dataset
@@ -1411,9 +1646,6 @@ bookmarkList.addEventListener(
 /* =========================================================
    DELETE CONFIRMATION
 ========================================================= */
-
-let deleteTarget =
-  null;
 
 const deleteModal =
   $("#delete-modal");
@@ -1428,11 +1660,6 @@ function openDeleteConfirmation(
   type,
   id
 ) {
-  deleteTarget = {
-    type,
-    id
-  };
-
   const collection =
     type === "expense"
       ? expenses
@@ -1444,7 +1671,14 @@ function openDeleteConfirmation(
         entry.id === id
     );
 
-  if (!item) return;
+  if (!item) {
+    return;
+  }
+
+  deleteTarget = {
+    type,
+    id
+  };
 
   deleteMessage.textContent =
     `Yakin ingin menghapus "${item.title}"?`;
@@ -1499,7 +1733,8 @@ deleteConfirmButton.addEventListener(
       renderBookmarks();
     }
 
-    deleteTarget = null;
+    deleteTarget =
+      null;
 
     closeModal(
       deleteModal
@@ -1645,7 +1880,9 @@ function getHighScore() {
       )
     );
 
-  return Number.isFinite(value)
+  return Number.isFinite(
+    value
+  )
     ? value
     : 0;
 }
@@ -1655,6 +1892,20 @@ function updateHighScore() {
     String(
       getHighScore()
     );
+}
+
+function resetQuizFeedback() {
+  quizFeedback.classList.remove(
+    "feedback-correct",
+    "feedback-wrong"
+  );
+
+  quizFeedback.classList.add(
+    "hidden"
+  );
+
+  quizFeedback.textContent =
+    "";
 }
 
 function resetQuizUI() {
@@ -1670,9 +1921,7 @@ function resetQuizUI() {
     "hidden"
   );
 
-  quizFeedback.classList.add(
-    "hidden"
-  );
+  resetQuizFeedback();
 
   nextQuestionButton.classList.add(
     "hidden"
@@ -1685,7 +1934,8 @@ function resetQuizUI() {
 function startQuiz() {
   quizIndex = 0;
   quizScore = 0;
-  quizAnswered = false;
+  quizAnswered =
+    false;
 
   quizStart.classList.add(
     "hidden"
@@ -1708,10 +1958,15 @@ function renderQuizQuestion() {
       quizIndex
     ];
 
-  quizAnswered = false;
+  quizAnswered =
+    false;
 
   quizProgress.textContent =
-    `Soal ${quizIndex + 1} dari ${quizQuestions.length}`;
+    `Soal ${
+      quizIndex + 1
+    } dari ${
+      quizQuestions.length
+    }`;
 
   quizQuestion.textContent =
     current.question;
@@ -1719,11 +1974,7 @@ function renderQuizQuestion() {
   quizOptions.innerHTML =
     "";
 
-  quizFeedback.className =
-    "quiz-feedback hidden";
-
-  quizFeedback.textContent =
-    "";
+  resetQuizFeedback();
 
   nextQuestionButton.classList.add(
     "hidden"
@@ -1758,11 +2009,14 @@ function renderQuizQuestion() {
 function showQuizFeedback(
   selectedIndex
 ) {
-  if (quizAnswered) {
+  if (
+    quizAnswered
+  ) {
     return;
   }
 
-  quizAnswered = true;
+  quizAnswered =
+    true;
 
   const current =
     quizQuestions[
@@ -1799,23 +2053,31 @@ function showQuizFeedback(
     }
   );
 
+  resetQuizFeedback();
+
+  quizFeedback.classList.remove(
+    "hidden"
+  );
+
   if (
     selectedIndex ===
     current.answer
   ) {
     quizScore += 1;
 
+    quizFeedback.classList.add(
+      "feedback-correct"
+    );
+
     quizFeedback.textContent =
       "Benar! Jawaban kamu tepat.";
-
-    quizFeedback.className =
-      "quiz-feedback feedback-correct";
   } else {
+    quizFeedback.classList.add(
+      "feedback-wrong"
+    );
+
     quizFeedback.textContent =
       `Kurang tepat. Jawaban yang benar adalah "${current.options[current.answer]}".`;
-
-    quizFeedback.className =
-      "quiz-feedback feedback-wrong";
   }
 
   nextQuestionButton.classList.remove(
@@ -1877,7 +2139,8 @@ quizOptions.addEventListener(
 
     showQuizFeedback(
       Number(
-        button.dataset.answerIndex
+        button.dataset
+          .answerIndex
       )
     );
   }
@@ -1886,7 +2149,9 @@ quizOptions.addEventListener(
 nextQuestionButton.addEventListener(
   "click",
   () => {
-    if (!quizAnswered) {
+    if (
+      !quizAnswered
+    ) {
       return;
     }
 
@@ -1922,8 +2187,10 @@ $("#restart-quiz-btn")
 
 addValidationStyles();
 
-expenseDateInput.value =
-  todayISO();
+if (expenseDateInput) {
+  expenseDateInput.value =
+    todayISO();
+}
 
 renderExpenses();
 
